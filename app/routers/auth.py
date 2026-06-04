@@ -86,3 +86,26 @@ def change_password(
     user.password_hash = hash_password(new_password)
     db.commit()
     return RedirectResponse("/profile/password?changed=1", 302)
+
+
+@router.post("/profile/name")
+def change_name(
+    request: Request,
+    name: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = get_current_user(request, db)
+    lang = request.session.get("lang", "uk")
+
+    def err(key):
+        from ..i18n import TRANSLATIONS
+        return TRANSLATIONS.get(lang, TRANSLATIONS["uk"]).get(key, key)
+
+    name = name.strip()
+    if len(name) < 2:
+        return templates.TemplateResponse("profile_password.html", {
+            "request": request, "user": user, "name_error": err("name_err_short"),
+        })
+    user.name = name
+    db.commit()
+    return RedirectResponse("/profile/password?name_changed=1", 302)
