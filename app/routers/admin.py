@@ -83,6 +83,24 @@ def create_teacher(
     return RedirectResponse("/admin/teachers", 302)
 
 
+@router.post("/teachers/{teacher_id}/change-role")
+def change_teacher_role(
+    teacher_id: int,
+    request: Request,
+    role: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    current = require_admin(request, db)
+    if current.id == teacher_id:
+        raise HTTPException(400, detail="Cannot change your own role")
+    teacher = db.get(models.User, teacher_id)
+    if not teacher or role not in ("teacher", "admin"):
+        return RedirectResponse("/admin/teachers", 302)
+    teacher.role = models.Role(role)
+    db.commit()
+    return RedirectResponse("/admin/teachers?role_changed=1", 302)
+
+
 @router.post("/teachers/{teacher_id}/delete")
 def delete_teacher(teacher_id: int, request: Request, db: Session = Depends(get_db)):
     current = require_admin(request, db)
