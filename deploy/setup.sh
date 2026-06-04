@@ -10,9 +10,17 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO="https://github.com/yevhenthet/collaborative_banking.git"
+# Pass your repo URL as the first argument, or set REPO env var.
+# If running from inside an already-cloned copy, APP_DIR is set by the caller.
+REPO="${1:-${REPO:-}}"
 APP_DIR="/opt/qbank"
 APP_USER="qbank"
+
+if [ -z "$REPO" ]; then
+    echo "Usage: bash setup.sh <git-repo-url>"
+    echo "  e.g. bash setup.sh https://github.com/yourorg/collaborative_banking.git"
+    exit 1
+fi
 
 # ── 1. System packages ────────────────────────────────────────────────────────
 echo "==> Installing system packages..."

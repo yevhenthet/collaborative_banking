@@ -121,10 +121,11 @@ Add an **A record** in your DNS provider pointing `yourdomain.com` to the server
 SSH in as root and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yevhenthet/collaborative_banking/main/deploy/setup.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/yevhenthet/collaborative_banking/main/deploy/setup.sh) \
+     https://github.com/YOUR-ORG/YOUR-REPO.git
 ```
 
-This installs Python, Caddy, clones the repo, creates a `qbank` system user, generates a `.env` with a fresh secret key, and starts the app as a systemd service.
+Replace `YOUR-ORG/YOUR-REPO` with the URL of **your own fork or clone** of this repository. The script installs Python, Caddy, clones your repo, creates a `qbank` system user, generates a `.env` with a fresh secret key, and starts the app as a systemd service.
 
 ### 4. Set your domain in Caddy
 
