@@ -21,12 +21,23 @@ from reportlab.pdfgen import canvas
 
 from . import models
 
-# Register Arial with Cyrillic support
-_FONT_DIR = "/System/Library/Fonts/Supplemental"
-pdfmetrics.registerFont(TTFont("Arial",            f"{_FONT_DIR}/Arial.ttf"))
-pdfmetrics.registerFont(TTFont("Arial-Bold",       f"{_FONT_DIR}/Arial Bold.ttf"))
-pdfmetrics.registerFont(TTFont("Arial-Italic",     f"{_FONT_DIR}/Arial Italic.ttf"))
-pdfmetrics.registerFont(TTFont("Arial-BoldItalic", f"{_FONT_DIR}/Arial Bold Italic.ttf"))
+import os as _os
+
+# macOS ships Arial; Linux containers use Liberation Sans (metric-compatible, Cyrillic support).
+if _os.path.isdir("/System/Library/Fonts/Supplemental"):
+    _FONT_DIR   = "/System/Library/Fonts/Supplemental"
+    _FONT_FILES = ("Arial.ttf", "Arial Bold.ttf", "Arial Italic.ttf", "Arial Bold Italic.ttf")
+else:
+    _FONT_DIR   = "/usr/share/fonts/truetype/liberation"
+    _FONT_FILES = (
+        "LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf",
+        "LiberationSans-Italic.ttf",  "LiberationSans-BoldItalic.ttf",
+    )
+
+pdfmetrics.registerFont(TTFont("Arial",            _os.path.join(_FONT_DIR, _FONT_FILES[0])))
+pdfmetrics.registerFont(TTFont("Arial-Bold",       _os.path.join(_FONT_DIR, _FONT_FILES[1])))
+pdfmetrics.registerFont(TTFont("Arial-Italic",     _os.path.join(_FONT_DIR, _FONT_FILES[2])))
+pdfmetrics.registerFont(TTFont("Arial-BoldItalic", _os.path.join(_FONT_DIR, _FONT_FILES[3])))
 pdfmetrics.registerFontFamily(
     "Arial",
     normal="Arial",
