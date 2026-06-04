@@ -14,4 +14,6 @@ RUN mkdir -p /data
 
 EXPOSE 8080
 
-CMD ["python", "run.py"]
+# Bind explicitly to 0.0.0.0:8080 — required by fly-proxy.
+# run.py is used for local dev; uvicorn is called directly in production.
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
