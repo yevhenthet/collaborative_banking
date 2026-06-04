@@ -20,10 +20,18 @@
     {% endif %}
   </div>
   {% if user.role.value == 'admin' %}
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
     <a href="/disciplines/{{ discipline.id }}/modules/new" class="btn btn-primary">
       <i class="bi bi-plus-lg"></i> {{ t('btn_new_module') }}
     </a>
+    <a href="/disciplines/{{ discipline.id }}/structure.json" class="btn btn-outline-secondary"
+       title="{{ t('btn_export_structure') }}">
+      <i class="bi bi-download me-1"></i>{{ t('btn_export_structure') }}
+    </a>
+    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importModal"
+            title="{{ t('btn_import_structure') }}">
+      <i class="bi bi-upload me-1"></i>{{ t('btn_import_structure') }}
+    </button>
     <a href="/disciplines/{{ discipline.id }}/edit" class="btn btn-outline-secondary">
       <i class="bi bi-pencil"></i>
     </a>
@@ -34,6 +42,24 @@
   </div>
   {% endif %}
 </div>
+
+{% set im = request.query_params.get('im') %}
+{% if im is not none %}
+<div class="alert alert-success fade-up fade-up-1">
+  <i class="bi bi-check-circle me-2"></i>{{ t('import_done') }}:
+  <strong>{{ request.query_params.get('im') }}</strong> {{ t('import_modules') }},
+  <strong>{{ request.query_params.get('it') }}</strong> {{ t('import_topics') }},
+  <strong>{{ request.query_params.get('il') }}</strong> {{ t('import_los') }}.
+  {% set sm = request.query_params.get('sm','0')|int + request.query_params.get('st','0')|int %}
+  {% if sm > 0 %}<span class="text-muted small ms-1">({{ sm }} {{ t('import_skipped') }})</span>{% endif %}
+</div>
+{% endif %}
+
+{% if request.query_params.get('import_error') %}
+<div class="alert alert-danger fade-up fade-up-1">
+  <i class="bi bi-exclamation-circle me-2"></i>{{ t('import_error') }}
+</div>
+{% endif %}
 
 {% if discipline.modules %}
 <div class="list-group fade-up fade-up-2">
@@ -50,6 +76,42 @@
 </div>
 {% else %}
 <p class="text-muted fade-up fade-up-2">{{ t('disc_empty') }}</p>
+{% endif %}
+
+{% if user.role.value == 'admin' %}
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-size:.95rem">
+          <i class="bi bi-upload me-2"></i>{{ t('btn_import_structure') }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/disciplines/{{ discipline.id }}/import-structure"
+            enctype="multipart/form-data">
+        <div class="modal-body">
+          <p class="text-muted small mb-3">{{ t('import_hint') }}</p>
+          <pre class="bg-light border rounded p-2 mb-3" style="font-size:.72rem;overflow-x:auto">[{"number":1,"name":"{{ t('import_example_module') }}","topics":[
+  {"number":1,"name":"{{ t('import_example_topic') }}",
+   "hours_weight":2,"is_high_stakes":false,
+   "learning_outcomes":[{"text":"...","bloom_level":"B"}]}
+]}]</pre>
+          <label class="form-label fw-semibold">{{ t('import_file_label') }}</label>
+          <input type="file" name="file" class="form-control" accept=".json" required>
+          <div class="form-text mt-1">{{ t('import_conflict_note') }}</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  data-bs-dismiss="modal">{{ t('btn_cancel') }}</button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-upload me-1"></i>{{ t('btn_import_structure') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endif %}
 
 {% endblock %}

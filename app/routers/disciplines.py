@@ -398,6 +398,137 @@ def delete_outcome(topic_id: int, lo_id: int, request: Request,
     return RedirectResponse(f"/topics/{topic_id}", 302)
 
 
+@router.get("/disciplines/{discipline_id}/structure.json")
+def export_discipline_structure(discipline_id: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    d = db.get(models.Discipline, discipline_id)
+    if not d:
+        raise HTTPException(404)
+    data = [
+        {
+            "number": m.number,
+            "name":   m.name,
+            "topics": [
+                {
+                    "number":           t.number,
+                    "name":             t.name,
+                    "hours_weight":     t.hours_weight,
+                    "is_high_stakes":   t.is_high_stakes,
+                    "learning_outcomes": [
+                        {"text": lo.text,
+                         "bloom_level": lo.bloom_level.value if lo.bloom_level else None}
+                        for lo in t.learning_outcomes
+                    ],
+                }
+                for t in m.topics
+            ],
+        }
+        for m in d.modules
+    ]
+    slug = d.name.replace(" ", "_")[:30]
+    return JSONResponse(
+        content=data,
+        headers={"Content-Disposition": f"attachment; filename=structure_{slug}.json"},
+    )
+
+
+@router.post("/disciplines/{discipline_id}/import-structure")
+async def import_discipline_structure(
+    discipline_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    d = db.get(models.Discipline, discipline_id)
+    if not d:
+        raise HTTPException(404)
+
+    content = await file.read()
+    try:
+        data = json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return RedirectResponse(f"/disciplines/{discipline_id}?import_error=1", 302)
+
+    if not isinstance(data, list):
+        return RedirectResponse(f"/disciplines/{discipline_id}?import_error=1", 302)
+
+    existing_modules = {m.number: m for m in d.modules}
+    mc = tc = lc = ms = ts = 0  # created / skipped counters
+
+    for m_raw in data:
+        if not isinstance(m_raw, dict):
+            continue
+        m_num  = m_raw.get("number")
+        m_name = (m_raw.get("name") or "").strip()
+        if not m_name or m_num is None:
+            continue
+        try:
+            m_num = int(m_num)
+        except (TypeError, ValueError):
+            continue
+
+        if m_num in existing_modules:
+            module = existing_modules[m_num]
+            ms += 1
+        else:
+            module = models.Module(discipline_id=discipline_id, name=m_name, number=m_num)
+            db.add(module)
+            db.flush()
+            existing_modules[m_num] = module
+            mc += 1
+
+        existing_topics = {t.number: t for t in module.topics}
+
+        for t_raw in m_raw.get("topics", []):
+            if not isinstance(t_raw, dict):
+                continue
+            t_num  = t_raw.get("number")
+            t_name = (t_raw.get("name") or "").strip()
+            if not t_name or t_num is None:
+                continue
+            try:
+                t_num = int(t_num)
+            except (TypeError, ValueError):
+                continue
+
+            if t_num in existing_topics:
+                ts += 1
+                continue
+
+            topic = models.Topic(
+                module_id=module.id,
+                name=t_name,
+                number=t_num,
+                hours_weight=max(1, int(t_raw.get("hours_weight") or 1)),
+                is_high_stakes=bool(t_raw.get("is_high_stakes", False)),
+            )
+            db.add(topic)
+            db.flush()
+            existing_topics[t_num] = topic
+            tc += 1
+
+            for lo_raw in t_raw.get("learning_outcomes", []):
+                if isinstance(lo_raw, str):
+                    lo_text, bloom = lo_raw.strip(), None
+                elif isinstance(lo_raw, dict):
+                    lo_text = (lo_raw.get("text") or "").strip()
+                    try:
+                        bloom = models.Difficulty(lo_raw.get("bloom_level")) if lo_raw.get("bloom_level") else None
+                    except ValueError:
+                        bloom = None
+                else:
+                    continue
+                if lo_text:
+                    db.add(models.TopicLO(topic_id=topic.id, text=lo_text, bloom_level=bloom))
+                    lc += 1
+
+    db.commit()
+    return RedirectResponse(
+        f"/disciplines/{discipline_id}?im={mc}&it={tc}&il={lc}&sm={ms}&st={ts}", 302
+    )
+
+
 @router.post("/topics/{topic_id}/toggle-high-stakes")
 def toggle_high_stakes(topic_id: int, request: Request, db: Session = Depends(get_db)):
     require_admin(request, db)
