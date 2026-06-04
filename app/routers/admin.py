@@ -22,8 +22,10 @@ router = APIRouter(prefix="/admin")
 def list_teachers(request: Request, db: Session = Depends(get_db)):
     user = require_admin(request, db)
     teachers = db.query(models.User).order_by(models.User.name).all()
+    new_teacher = request.session.pop("new_teacher", None)
     return templates.TemplateResponse("admin_teachers.html", {
         "request": request, "user": user, "teachers": teachers,
+        "new_teacher": new_teacher,
     })
 
 
@@ -45,13 +47,39 @@ def create_teacher(
             "request": request, "user": user, "teachers": teachers,
             "error": error,
         })
+    name_clean  = name.strip()
+    email_clean = email.strip().lower()
     db.add(models.User(
-        name=name.strip(),
-        email=email.strip().lower(),
+        name=name_clean,
+        email=email_clean,
         password_hash=hash_password(password),
         role=models.Role(role),
     ))
     db.commit()
+
+    lang     = request.session.get("lang", "uk")
+    base_url = str(request.base_url).rstrip("/")
+    if lang == "en":
+        msg = (
+            f"Hello, {name_clean}!\n\n"
+            f"Your account has been created in the Question Bank.\n\n"
+            f"🔗 {base_url}\n"
+            f"📧 Email: {email_clean}\n"
+            f"🔑 Password: {password}\n\n"
+            f"Please change your password after your first login "
+            f"(key icon ​🔑 in the sidebar)."
+        )
+    else:
+        msg = (
+            f"Вітаємо, {name_clean}!\n\n"
+            f"Вам створено обліковий запис у системі «Банк питань».\n\n"
+            f"🔗 {base_url}\n"
+            f"📧 Email: {email_clean}\n"
+            f"🔑 Пароль: {password}\n\n"
+            f"Після першого входу рекомендуємо змінити пароль у профілі "
+            f"(іконка ключа 🔑 у бічному меню)."
+        )
+    request.session["new_teacher"] = {"name": name_clean, "message": msg}
     return RedirectResponse("/admin/teachers", 302)
 
 
