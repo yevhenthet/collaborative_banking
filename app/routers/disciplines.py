@@ -425,10 +425,9 @@ def export_discipline_structure(discipline_id: int, request: Request, db: Sessio
         }
         for m in d.modules
     ]
-    slug = d.name.replace(" ", "_")[:30]
     return JSONResponse(
         content=data,
-        headers={"Content-Disposition": f"attachment; filename=structure_{slug}.json"},
+        headers={"Content-Disposition": f"attachment; filename=structure_{discipline_id}.json"},
     )
 
 
