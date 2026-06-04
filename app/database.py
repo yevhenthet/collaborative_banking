@@ -1,7 +1,11 @@
+import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = "sqlite:///./question_bank.db"
+# Default: local file next to the project root.
+# On Fly.io (or any container): set DATABASE_URL=sqlite:////data/question_bank.db
+# to persist data on the mounted volume.
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./question_bank.db")
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 

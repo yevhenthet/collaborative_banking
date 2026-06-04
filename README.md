@@ -101,73 +101,88 @@ See `.env.example` for a documented template.
 
 ---
 
-## Deploying to Hetzner (Ubuntu 22.04 / 24.04)
+## Deploying to Fly.io
 
-This is the recommended setup for a shared department instance: Hetzner CAX11 (€4/mo) + Caddy (automatic HTTPS).
+Free tier covers one small VM + 3 GB persistent volume — enough for a department-sized instance.
 
-### 1. Create the server
-
-In the [Hetzner Cloud Console](https://console.hetzner.cloud/):
-- **Type:** CAX11 (2 vCPU ARM, 4 GB RAM) — adequate for up to ~50 concurrent users
-- **Image:** Ubuntu 24.04
-- **SSH key:** add your public key
-
-### 2. Point your domain at the server
-
-Add an **A record** in your DNS provider pointing `yourdomain.com` to the server's IP address. Allow a few minutes to propagate.
-
-### 3. Run the bootstrap script
-
-SSH in as root and run:
+### Prerequisites
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/yevhenthet/collaborative_banking/main/deploy/setup.sh) \
-     https://github.com/YOUR-ORG/YOUR-REPO.git
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Log in
+fly auth login
 ```
 
-Replace `YOUR-ORG/YOUR-REPO` with the URL of **your own fork or clone** of this repository. The script installs Python, Caddy, clones your repo, creates a `qbank` system user, generates a `.env` with a fresh secret key, and starts the app as a systemd service.
+### 1. Edit fly.toml
 
-### 4. Set your domain in Caddy
+Open `fly.toml` and replace `your-app-name` with a unique name (e.g. `microbio-qbank`). This becomes your URL: `https://your-app-name.fly.dev`.
+
+### 2. Create the app and persistent volume
 
 ```bash
-nano /etc/caddy/Caddyfile
-# replace 'yourdomain.com' with your actual domain
-systemctl reload caddy
+fly apps create your-app-name
+fly volumes create qbank_data --size 1 --region fra
 ```
 
-Caddy automatically obtains and renews a Let's Encrypt TLS certificate.
+### 3. Set secrets
+
+```bash
+fly secrets set SESSION_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+fly secrets set DATABASE_URL="sqlite:////data/question_bank.db"
+```
+
+### 4. Deploy
+
+```bash
+fly deploy
+```
 
 ### 5. Create the first admin account
 
 ```bash
-cd /opt/qbank
-sudo -u qbank venv/bin/python seed_admin.py
+fly ssh console -C "python seed_admin.py"
 ```
 
 ### 6. Open your site
 
-Visit `https://yourdomain.com` and log in.
+```
+https://your-app-name.fly.dev
+```
 
 ---
 
 ### Updating after a new release
 
 ```bash
-bash /opt/qbank/deploy/update.sh
+fly deploy
 ```
 
-Pulls the latest code, updates dependencies, and restarts the service with zero downtime for the database.
+Fly builds a new image and does a rolling restart — the database on the volume is untouched.
 
-### Useful commands on the server
+### Useful commands
 
 ```bash
-systemctl status qbank          # service status
-journalctl -u qbank -f          # live logs
-systemctl restart qbank         # restart after manual .env change
-cp /opt/qbank/question_bank.db /opt/qbank/question_bank.db.bak  # backup
+fly status                        # machine status
+fly logs                          # live logs
+fly ssh console                   # shell into the running container
+fly volumes list                  # verify volume is attached
+
+# Backup the database
+fly sftp get /data/question_bank.db ./question_bank.db.bak
 ```
 
 ---
+
+## Self-hosting on a VPS (Hetzner / DigitalOcean)
+
+For Ubuntu 22.04 / 24.04 with Caddy as a reverse proxy, a bootstrap script
+and systemd service are provided in the `deploy/` directory.
+See [`deploy/setup.sh`](deploy/setup.sh) for details.
+
+---
+
 
 ## Production notes
 
