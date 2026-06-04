@@ -1,0 +1,17 @@
+[Unit]
+Description=Question Bank — collaborative exam question tool
+After=network.target
+
+[Service]
+Type=simple
+User=qbank
+WorkingDirectory=/opt/qbank
+EnvironmentFile=/opt/qbank/.env
+ExecStart=/opt/qbank/venv/bin/python run.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

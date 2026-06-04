@@ -1,0 +1,23 @@
+# Replace with your domain. Caddy handles TLS automatically.
+# Point your domain's A record to the server IP before starting Caddy.
+#
+# Example with a domain:
+#   yourdomain.com { ... }
+#
+# Temporary access via IP only (no TLS, for testing):
+#   :80 { ... }
+
+yourdomain.com {
+    reverse_proxy localhost:8000
+
+    # Compress responses
+    encode gzip
+
+    # Security headers
+    header {
+        X-Frame-Options SAMEORIGIN
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+}

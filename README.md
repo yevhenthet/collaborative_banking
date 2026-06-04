@@ -101,6 +101,73 @@ See `.env.example` for a documented template.
 
 ---
 
+## Deploying to Hetzner (Ubuntu 22.04 / 24.04)
+
+This is the recommended setup for a shared department instance: Hetzner CAX11 (€4/mo) + Caddy (automatic HTTPS).
+
+### 1. Create the server
+
+In the [Hetzner Cloud Console](https://console.hetzner.cloud/):
+- **Type:** CAX11 (2 vCPU ARM, 4 GB RAM) — adequate for up to ~50 concurrent users
+- **Image:** Ubuntu 24.04
+- **SSH key:** add your public key
+
+### 2. Point your domain at the server
+
+Add an **A record** in your DNS provider pointing `yourdomain.com` to the server's IP address. Allow a few minutes to propagate.
+
+### 3. Run the bootstrap script
+
+SSH in as root and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yevhenthet/collaborative_banking/main/deploy/setup.sh | bash
+```
+
+This installs Python, Caddy, clones the repo, creates a `qbank` system user, generates a `.env` with a fresh secret key, and starts the app as a systemd service.
+
+### 4. Set your domain in Caddy
+
+```bash
+nano /etc/caddy/Caddyfile
+# replace 'yourdomain.com' with your actual domain
+systemctl reload caddy
+```
+
+Caddy automatically obtains and renews a Let's Encrypt TLS certificate.
+
+### 5. Create the first admin account
+
+```bash
+cd /opt/qbank
+sudo -u qbank venv/bin/python seed_admin.py
+```
+
+### 6. Open your site
+
+Visit `https://yourdomain.com` and log in.
+
+---
+
+### Updating after a new release
+
+```bash
+bash /opt/qbank/deploy/update.sh
+```
+
+Pulls the latest code, updates dependencies, and restarts the service with zero downtime for the database.
+
+### Useful commands on the server
+
+```bash
+systemctl status qbank          # service status
+journalctl -u qbank -f          # live logs
+systemctl restart qbank         # restart after manual .env change
+cp /opt/qbank/question_bank.db /opt/qbank/question_bank.db.bak  # backup
+```
+
+---
+
 ## Production notes
 
 This tool is designed for **local / intranet deployment** within a department.

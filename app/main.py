@@ -85,7 +85,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=_SECRET_KEY,
     same_site="strict",
-    https_only=False,  # set True behind HTTPS in production
+    https_only=os.environ.get("HTTPS_ONLY", "false").lower() == "true",
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
