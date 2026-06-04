@@ -34,8 +34,8 @@ No external database server required — SQLite is used out of the box.
 
 ```bash
 # 1. Clone
-git clone <repo-url>
-cd question-bank
+git clone https://github.com/yevhenthet/collaborative_banking.git
+cd collaborative_banking
 
 # 2. Install dependencies into a virtual environment
 make install
