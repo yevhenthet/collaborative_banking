@@ -1,0 +1,32 @@
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environment ───────────────────────────────────────────
+venv/
+env/
+.env/
+
+# ── Secrets — never commit real credentials ───────────────────────
+.env
+
+# ── Database — never commit real data ────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Institution-specific seed scripts ─────────────────────────────
+seed_questions.py
+
+# ── OS / editor noise ─────────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

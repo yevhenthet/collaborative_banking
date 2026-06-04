@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tests_title') }} — {{ t('bc_module') }} {{ module.number }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-4 fade-up">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/faculties/{{ module.discipline.faculty_id }}">{{ module.discipline.faculty.name }}</a></li>
+    <li class="breadcrumb-item"><a href="/disciplines/{{ module.discipline_id }}">{{ module.discipline.name }}</a></li>
+    <li class="breadcrumb-item"><a href="/modules/{{ module.id }}">{{ t('bc_module') }} {{ module.number }}</a></li>
+    <li class="breadcrumb-item active">{{ t('tests_title') }}</li>
+  </ol>
+</nav>
+
+<div class="page-header fade-up fade-up-1">
+  <div>
+    <h2>{{ t('tests_title') }}</h2>
+    <div class="subtitle">{{ t('bc_module') }} {{ module.number }}. {{ module.name }}</div>
+  </div>
+  <a href="/modules/{{ module.id }}/tests/new" class="btn btn-success">
+    <i class="bi bi-lightning me-1"></i>{{ t('mod_generate_test') }}
+  </a>
+</div>
+
+{% if batches %}
+{% for batch in batches %}
+
+{% if batch | length > 1 %}
+<div class="card mb-3 fade-up" style="animation-delay: {{ loop.index * 0.05 }}s">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <strong>{{ batch[0].name | replace(" — Варіант 1","") }}</strong>
+      <span class="badge bg-secondary">{{ batch | length }} {{ t('test_variants') }}</span>
+    </div>
+    <span style="font-size:.75rem;color:var(--text-4)">
+      {{ batch[0].created_at.strftime("%d.%m.%Y") }} · {{ batch[0].creator.name }}
+    </span>
+  </div>
+  <div class="card-body py-2">
+    <div class="d-flex flex-wrap gap-2">
+      {% for tst in batch %}
+      <a href="/tests/{{ tst.id }}" class="btn btn-sm btn-outline-primary">
+        {{ tst.variant_label }}
+        <span class="badge bg-secondary ms-1">{{ tst.test_questions | length }} {{ t('test_questions') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% else %}
+{% set tst = batch[0] %}
+<a href="/tests/{{ tst.id }}"
+   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center mb-2 rounded border fade-up"
+   style="animation-delay: {{ loop.index * 0.05 }}s">
+  <div>
+    <strong>{{ tst.name }}</strong>
+    <span style="font-size:.75rem;color:var(--text-4);margin-left:8px">
+      {{ tst.created_at.strftime("%d.%m.%Y") }} · {{ tst.creator.name }}
+    </span>
+  </div>
+  <span class="badge bg-secondary">{{ tst.test_questions | length }} {{ t('test_questions') }}</span>
+</a>
+{% endif %}
+
+{% endfor %}
+{% else %}
+<div class="text-center py-5 fade-up fade-up-2" style="color:var(--text-4)">
+  <i class="bi bi-file-text" style="font-size:2.5rem;display:block;margin-bottom:12px;opacity:.4"></i>
+  <p class="mb-0">{{ t('tests_empty') }}</p>
+</div>
+{% endif %}
+
+{% endblock %}

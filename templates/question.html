@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+{% block title %}{{ t('bc_question') }} #{{ question.id }}{% endblock %}
+{% block content %}
+<div style="max-width:760px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/faculties/{{ question.topic.module.discipline.faculty_id }}">{{ question.topic.module.discipline.faculty.name }}</a></li>
+      <li class="breadcrumb-item"><a href="/disciplines/{{ question.topic.module.discipline_id }}">{{ question.topic.module.discipline.name }}</a></li>
+      <li class="breadcrumb-item"><a href="/modules/{{ question.topic.module_id }}">{{ t('bc_module') }} {{ question.topic.module.number }}</a></li>
+      <li class="breadcrumb-item"><a href="/topics/{{ question.topic_id }}">{{ t('bc_topic') }} {{ question.topic.number }}</a></li>
+      <li class="breadcrumb-item active">{{ t('bc_question') }} #{{ question.id }}</li>
+    </ol>
+  </nav>
+
+  {# ── Question card ──────────────────────────────────────── #}
+  <div class="card mb-4 fade-up fade-up-1">
+    <div class="card-body">
+      <h4 class="mb-3" style="font-family:var(--font-sans);font-weight:600">{{ question.text }}</h4>
+
+      <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+        {% set sc = {"active":"bg-success keep","pending":"bg-warning","retired":"bg-secondary"} %}
+        <span class="badge {{ sc[question.status.value] }}">
+          {% if question.status.value == "active" %}{{ t('q_status_active') }}
+          {% elif question.status.value == "pending" %}{{ t('q_status_pending') }}
+          {% else %}{{ t('q_status_retired') }}{% endif %}
+        </span>
+        <span class="badge bg-light text-dark border">
+          {{ t('q_proposed') }}: {{ diff_label(question.proposed_difficulty.value) }}
+        </span>
+        {% if question.final_difficulty %}
+        <span class="badge bg-primary">{{ t('q_approved') }}: {{ diff_label(question.final_difficulty.value) }}</span>
+        {% endif %}
+        {% if question.question_type %}
+        <span class="badge bg-info">{{ type_label(question.question_type.value) }}</span>
+        {% endif %}
+        {% if question.status.value != 'pending' or user.role.value == 'admin' or question.author_id == user.id %}
+        <span style="font-size:.78rem;color:var(--text-4)">{{ t('q_author') }}: {{ question.author.name }}</span>
+        {% endif %}
+        <span style="font-size:.78rem;color:var(--text-4)">{{ t('q_round') }} {{ question.current_round }}</span>
+      </div>
+
+      {% if question.learning_objective %}
+      <div class="objective-block mb-2">
+        <strong>{{ t('q_lo_label') }}:</strong> {{ question.learning_objective }}
+      </div>
+      {% endif %}
+
+      {% if question.model_answer %}
+      <div class="model-answer-block">
+        <i class="bi bi-check-circle me-1"></i>
+        <strong>{{ t('q_model_answer') }}:</strong> {{ question.model_answer }}
+      </div>
+      {% else %}
+      <div class="model-answer-missing">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        {{ t('q_model_answer_missing') }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Item analysis panel ───────────────────────────────── #}
+  <div class="card mb-4 fade-up fade-up-2">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-graph-up me-2"></i>{{ t('ia_title') }}</span>
+      {% if rec and rec.action %}
+      <span class="badge {{ rec.css }}">
+        {{ t('ia_recommend_' + rec.action) }}
+      </span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+
+      {% if fac.n_tests == 0 and rev.n_votes == 0 %}
+      <p class="text-muted small mb-0">{{ t('ia_no_data') }}</p>
+      {% else %}
+
+      {# Recommendation reasons #}
+      {% if rec and rec.reasons %}
+      <div class="d-flex flex-wrap gap-1 mb-3">
+        {% for r in rec.reasons %}
+        <span class="badge bg-light text-dark border" style="font-size:.72rem">
+          <i class="bi bi-flag me-1"></i>{{ t('ia_reason_' + r) }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="row g-3">
+
+        {# ── Facility ── #}
+        {% if fac.n_tests > 0 %}
+        <div class="col-md-6">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:8px">
+            {{ t('ia_facility') }}
+            <span style="font-weight:400;text-transform:none;letter-spacing:0">
+              ({{ fac.n_tests }} {{ t('ia_n_tests') }}, n={{ fac.total_n }})
+            </span>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span style="font-size:1.6rem;font-weight:700;line-height:1;color:var(--text-1)">{{ fac.mean_pct }}%</span>
+            <span class="badge {{ P_BAND_CSS[fac.band] }}">
+              <i class="bi {{ P_BAND_ICON[fac.band] }} me-1"></i>{{ t('ia_band_' + fac.band) }}
+            </span>
+          </div>
+          {# Progress bar with CI markers #}
+          <div style="height:6px;border-radius:3px;background:var(--bg-3);margin-bottom:4px;overflow:hidden;position:relative">
+            {# CI shaded region #}
+            <div style="position:absolute;left:{{ fac.ci_lo }}%;top:0;width:{{ fac.ci_hi - fac.ci_lo }}%;height:100%;background:{{ '#15803d' if fac.band=='acceptable' else ('#d97706' if fac.band=='too_easy' else '#dc2626') }};opacity:.25;border-radius:3px"></div>
+            {# Mean marker #}
+            <div style="position:absolute;left:0;top:0;width:{{ fac.mean_pct }}%;height:100%;background:{{ '#15803d' if fac.band=='acceptable' else ('#d97706' if fac.band=='too_easy' else '#dc2626') }};border-radius:3px"></div>
+          </div>
+          <div style="font-size:.72rem;color:var(--text-4);margin-bottom:4px">
+            {{ t('ia_ci_95') }}: {{ fac.ci_lo }}%–{{ fac.ci_hi }}%
+          </div>
+          {% if fac.n_tests > 1 %}
+          <div style="font-size:.75rem;color:var(--text-4)">
+            {{ t('ia_range') }}: {{ fac.min_pct }}%–{{ fac.max_pct }}%
+            &nbsp;·&nbsp; SD {{ fac.sd_p }}
+            &nbsp;·&nbsp;
+            <span class="{{ 'text-success' if fac.stable else 'text-warning' }}">
+              <i class="bi {{ 'bi-check2' if fac.stable else 'bi-exclamation' }}"></i>
+              {{ t('ia_stable') if fac.stable else t('ia_unstable') }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ── Discrimination ── #}
+        <div class="col-md-6">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:8px">
+            {{ t('ia_discrimination') }}
+          </div>
+          {% if disc %}
+          {% if disc.small_sample_warning %}
+          <div class="d-flex align-items-start gap-2 mb-2" style="background:var(--amber-light);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:6px 10px;font-size:.78rem;color:var(--amber-hover)">
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+            <span>{{ t('ia_d_small_sample') }} (n={{ disc.min_group_n }})</span>
+          </div>
+          {% endif %}
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span style="font-size:1.6rem;font-weight:700;line-height:1;color:var(--text-1){% if disc.small_sample_warning %};opacity:.6{% endif %}">{{ disc.mean_d }}</span>
+            {% if not disc.small_sample_warning %}
+            <span class="badge {{ D_BAND_CSS[disc.band] }}">
+              <i class="bi {{ D_BAND_ICON[disc.band] }} me-1"></i>{{ t('ia_d_' + disc.band) }}
+            </span>
+            {% else %}
+            <span class="badge bg-secondary">{{ t('ia_d_' + disc.band) }}</span>
+            {% endif %}
+          </div>
+          {# D-index bar #}
+          <div style="height:6px;border-radius:3px;background:var(--bg-3);margin-bottom:4px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border)"></div>
+            {% set bar_color = '#94a3b8' if disc.small_sample_warning else ('#15803d' if disc.band in ('excellent','good') else ('#d97706' if disc.band=='marginal' else '#dc2626')) %}
+            {% if disc.mean_d >= 0 %}
+            <div style="position:absolute;left:50%;top:0;width:{{ (disc.mean_d * 50) | round(0) | int }}%;height:100%;background:{{ bar_color }};border-radius:0 3px 3px 0"></div>
+            {% else %}
+            <div style="position:absolute;right:50%;top:0;width:{{ (disc.mean_d * -50) | round(0) | int }}%;height:100%;background:#dc2626;border-radius:3px 0 0 3px"></div>
+            {% endif %}
+          </div>
+          {# CI for first (most recent) entry #}
+          {% set e0 = disc.entries | last %}
+          <div style="font-size:.72rem;color:var(--text-4);margin-bottom:4px">
+            {{ t('ia_ci_95') }}: {{ e0.ci_lo }}–{{ e0.ci_hi }}
+            &nbsp;·&nbsp; {{ disc.n_tests }} {{ t('ia_n_tests') }}, n={{ disc.min_group_n }}/group
+          </div>
+          {% else %}
+          <div style="font-size:.8rem;color:var(--text-4)">
+            <i class="bi bi-info-circle me-1"></i>{{ t('ia_no_discrim') }}
+          </div>
+          {% endif %}
+        </div>
+
+        {# ── Peer review profile ── #}
+        {% if rev.n_votes > 0 %}
+        <div class="col-12">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:10px">
+            {{ t('ia_review') }}
+            <span style="font-weight:400;text-transform:none;letter-spacing:0">
+              — {{ rev.n_raters }} {{ t('ia_n_raters') }}, {{ rev.approval_rate }}% {{ t('ia_approval') | lower }}
+            </span>
+          </div>
+          <div class="d-flex flex-column gap-2">
+            {% for crit_name in ["crit_wording","crit_lo","crit_bloom","crit_answer","crit_accuracy"] %}
+            {% set cd = rev.criteria.get(crit_name) %}
+            {% if cd %}
+            {% set bar_color = 'var(--accent)' if cd.high else ('#d97706' if cd.mean >= 1.5 else '#dc2626') %}
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <div style="width:140px;font-size:.78rem;color:var(--text-3);flex-shrink:0">{{ t(crit_name) }}</div>
+                <div style="flex:1;height:8px;border-radius:4px;background:var(--bg-3);overflow:hidden">
+                  <div style="height:100%;width:{{ cd.mean_pct | int }}%;background:{{ bar_color }};border-radius:4px;transition:width .4s"></div>
+                </div>
+                <div style="width:36px;font-size:.78rem;font-weight:600;text-align:right;flex-shrink:0;color:{{ bar_color }}">
+                  {{ cd.mean }}
+                </div>
+                {% if cd.low_flag %}
+                <i class="bi bi-flag-fill text-danger" style="font-size:.75rem" title="{{ t('ia_revision_flags') }}"></i>
+                {% endif %}
+              </div>
+              {# Inter-rater agreement indicator #}
+              {% if cd.n > 1 %}
+              {% set irr_css = 'var(--success)' if cd.agreement == 'high' else ('var(--amber)' if cd.agreement == 'moderate' else 'var(--danger)') %}
+              <div style="font-size:.65rem;color:{{ irr_css }};margin-left:148px;margin-top:2px">
+                <i class="bi bi-people" style="font-size:.6rem"></i>
+                {{ t('ia_irr_' + cd.agreement) }} (SD={{ cd.sd }}, n={{ cd.n }})
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% if rev.composite_pct is not none %}
+          <div class="mt-2" style="font-size:.78rem;color:var(--text-4)">
+            {{ t('ia_composite') }}: <strong>{{ rev.composite_pct }}%</strong>
+            {% if rev.diff_consensus_pct is not none %}
+            &nbsp;·&nbsp; {{ t('ia_diff_consensus') }}: <strong>{{ rev.diff_consensus_pct }}%</strong>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ── Administration history ── #}
+        {% if fac.get('values') %}
+        <div class="col-12">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:8px">
+            {{ t('ia_history') }}
+            {# Exposure count #}
+            {% if total_uses is defined %}
+            <span style="font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px">
+              — {{ t('ia_exposure') }}: <strong>{{ total_uses }}</strong>
+              {% if exposure_horizon is defined %}
+              <span style="color:var(--text-4);font-size:.65rem">({{ t('ia_exposure_recent') }} {{ exposure_horizon }})</span>
+              {% endif %}
+            </span>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for entry in fac.get('values', []) %}
+            <a href="/tests/{{ entry.test_id }}" class="badge bg-light text-dark border text-decoration-none"
+               style="font-size:.72rem;font-weight:500">
+              {{ entry.date }} — p={{ entry.p_pct }}% ({{ entry.correct }}/{{ entry.n }})
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {# ── Author/admin actions ───────────────────────────────── #}
+  {% if user.role.value == 'admin' or question.author_id == user.id %}
+  <div class="d-flex gap-2 mb-4 fade-up fade-up-2">
+    <a href="/questions/{{ question.id }}/edit" class="btn btn-outline-warning btn-sm">
+      <i class="bi bi-pencil"></i> {{ t('btn_edit_resubmit') }}
+    </a>
+    <form method="post" action="/questions/{{ question.id }}/retire"
+          onsubmit="return confirm('{{ t('confirm_archive') }}')">
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-archive"></i> {{ t('btn_archive') }}</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {# Names visible to admin always; to everyone once question is active #}
+  {% set show_reviewer_names = (user.role.value == 'admin') or (question.status.value == 'active') %}
+
+  {# ── Votes by round ─────────────────────────────────────── #}
+  {% set all_rounds = question.votes | map(attribute='round') | unique | sort | list %}
+  {% for rnd in all_rounds | sort(reverse=true) %}
+  {% set round_votes = question.votes | selectattr("round", "equalto", rnd) | list %}
+  <div class="round-section fade-up fade-up-3">
+    <div class="round-header">
+      <i class="bi bi-circle{{ '-fill' if rnd == question.current_round else '' }}"
+         style="color:{{ 'var(--accent)' if rnd == question.current_round else 'var(--text-4)' }}"></i>
+      {{ t('vote_round_heading') }} {{ rnd }}
+      <span class="badge bg-light text-dark border">{{ round_votes | length }} / {{ quorum }}</span>
+      {% if rnd == question.current_round %}
+      <span class="badge bg-primary">{{ t('vote_current') }}</span>
+      {% else %}
+      <span class="badge bg-secondary">{{ t('vote_archived') }}</span>
+      {% endif %}
+    </div>
+    {# Revision snapshot for past rounds #}
+    {% if rnd != question.current_round and revisions_map is defined %}
+    {% set rev_snap = revisions_map.get(rnd) %}
+    {% if rev_snap %}
+    <div style="margin:8px 0 4px;padding:8px 12px;background:var(--surface-2);border-left:3px solid var(--border);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:.8rem;color:var(--text-3)">
+      <div style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-4);margin-bottom:4px">
+        <i class="bi bi-clock-history me-1"></i>{{ t('q_revision_text') }} {{ rnd }}
+      </div>
+      {{ rev_snap.text }}
+      {% if rev_snap.model_answer %}
+      <div class="mt-1 small text-success"><i class="bi bi-check-circle me-1"></i>{{ rev_snap.model_answer }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+    {% if round_votes %}
+    {% for vote in round_votes %}
+    <div class="vote-row">
+      <div style="flex:1;min-width:0">
+        <div class="name">
+          {% if show_reviewer_names %}{{ vote.teacher.name }}{% else %}<span style="color:var(--text-4);font-style:italic">{{ t('vote_anonymous') }}</span>{% endif %}
+        </div>
+        {% if vote.comment %}
+        <div class="comment">{{ vote.comment }}</div>
+        {% endif %}
+        {% set has_crits = vote.crit_wording or vote.crit_lo or vote.crit_bloom or vote.crit_answer or vote.crit_accuracy %}
+        {% if has_crits %}
+        <div class="crit-mini">
+          {% for crit_name, val in [
+            ("crit_wording", vote.crit_wording),
+            ("crit_lo", vote.crit_lo),
+            ("crit_bloom", vote.crit_bloom),
+            ("crit_answer", vote.crit_answer),
+            ("crit_accuracy", vote.crit_accuracy),
+          ] %}
+          {% if val %}
+          {% set opts = crit_opts(crit_name) %}
+          <span class="crit-mini-item c{{ val }}">{{ t(crit_name) }}: {{ opts[val-1] }}</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="d-flex gap-1 align-items-start flex-shrink-0 ms-3">
+        <span class="badge {{ 'bg-success keep' if vote.approve else 'bg-danger' }}">
+          {{ t('vote_approved') if vote.approve else t('vote_rejected') }}
+        </span>
+        <span class="badge bg-light text-dark border">
+          {{ diff_label(vote.difficulty_vote.value) }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-muted small mb-0 ps-2">{{ t('vote_none') }}</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="text-muted fade-up fade-up-3">{{ t('vote_none') }}</p>
+  {% endfor %}
+
+  {# ── Vote form (current round) ──────────────────────────── #}
+  {% if question.status.value != "retired" and question.author_id != user.id %}
+  <div class="card mt-3 fade-up fade-up-4">
+    <div class="card-header">
+      {% if my_vote %}
+        <i class="bi bi-pencil-square me-1"></i>
+        {{ t('vote_form_title_edit') }} {{ question.current_round }}
+      {% else %}
+        <i class="bi bi-check2-square me-1"></i>
+        {{ t('vote_form_title_new') }} {{ question.current_round }}
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <form method="post" action="/questions/{{ question.id }}/vote">
+        <div class="mb-3">
+          <label class="form-label">{{ t('vote_decision') }}</label>
+          <input type="hidden" name="approve" id="approve_hidden" value="yes">
+          <div class="d-flex align-items-center gap-2 mt-1">
+            <span id="decision-badge-q" class="decision-chip decision-chip-approve"
+                  data-approve-text="{{ t('vote_approved') }}" data-reject-text="{{ t('vote_rejected') }}">
+              <i class="bi bi-hand-thumbs-up me-1"></i>{{ t('vote_approved') }}
+            </span>
+            <span style="font-size:.75rem;color:var(--text-4)">{{ t('vote_auto_label') }}</span>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{{ t('vote_difficulty') }}</label>
+          <div class="d-flex gap-3 flex-wrap">
+            {% for diff in difficulties %}
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="difficulty_vote"
+                     id="vdiff_{{ diff.value }}" value="{{ diff.value }}"
+                     {% if my_vote and my_vote.difficulty_vote == diff %}checked
+                     {% elif not my_vote and diff == question.proposed_difficulty %}checked{% endif %}>
+              <label class="form-check-label" for="vdiff_{{ diff.value }}">
+                <span class="{{ 'diff-b' if diff.value=='B' else ('diff-s' if diff.value=='M' else 'diff-v') }}">
+                  {{ diff_label(diff.value) }}
+                </span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{{ t('vote_criteria') }}</label>
+          <div class="review-criteria">
+            {% for crit_name in ["crit_wording","crit_lo","crit_bloom","crit_answer","crit_accuracy"] %}
+            {% set opts = crit_opts(crit_name) %}
+            {% set saved = none %}
+            {% if my_vote %}
+              {% if crit_name == "crit_wording" %}{% set saved = my_vote.crit_wording %}
+              {% elif crit_name == "crit_lo" %}{% set saved = my_vote.crit_lo %}
+              {% elif crit_name == "crit_bloom" %}{% set saved = my_vote.crit_bloom %}
+              {% elif crit_name == "crit_answer" %}{% set saved = my_vote.crit_answer %}
+              {% elif crit_name == "crit_accuracy" %}{% set saved = my_vote.crit_accuracy %}
+              {% endif %}
+            {% endif %}
+            <div class="crit-row">
+              <span class="crit-label">{{ t(crit_name) }}</span>
+              <div class="crit-toggle">
+                {% for i in [1,2,3] %}
+                <input type="radio" name="{{ crit_name }}" id="q{{ crit_name }}_{{ i }}" value="{{ i }}"
+                       {% if saved == i or (not saved and i == 2) %}checked{% endif %}>
+                <label for="q{{ crit_name }}_{{ i }}" class="c{{ i }}">{{ opts[i-1] }}</label>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">{{ t('vote_comment_label') }}</label>
+          <input type="text" name="comment" class="form-control"
+                 value="{{ my_vote.comment if my_vote and my_vote.comment else '' }}"
+                 placeholder="{{ t('vote_comment_placeholder') }}">
+        </div>
+        <button type="submit" class="btn btn-primary">
+          {% if my_vote %}
+          <i class="bi bi-arrow-repeat me-1"></i>{{ t('btn_vote_update') }}
+          {% else %}
+          <i class="bi bi-send me-1"></i>{{ t('btn_vote_new') }}
+          {% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+(function(){
+  var form=document.querySelector('form[action*="/vote"]');
+  if(!form)return;
+  function get(name){
+    var el=form.querySelector('input[name="'+name+'"]:checked');
+    return el?parseInt(el.value,10):null;
+  }
+  function update(){
+    var w=get('crit_wording'),lo=get('crit_lo'),bl=get('crit_bloom'),
+        ans=get('crit_answer'),acc=get('crit_accuracy');
+    if(w===null||lo===null||bl===null||ans===null||acc===null)return;
+    var ok=(w>=2&&lo>=2&&bl===2&&ans>=2&&acc>=2);
+    var hid=document.getElementById('approve_hidden');
+    var chip=document.getElementById('decision-badge-q');
+    if(hid)hid.value=ok?'yes':'no';
+    if(chip){
+      var approveText=chip.dataset.approveText||'Approved';
+      var rejectText=chip.dataset.rejectText||'Rejected';
+      chip.className='decision-chip '+(ok?'decision-chip-approve':'decision-chip-reject');
+      chip.innerHTML=ok
+        ?'<i class="bi bi-hand-thumbs-up me-1"></i>'+approveText
+        :'<i class="bi bi-hand-thumbs-down me-1"></i>'+rejectText;
+    }
+  }
+  form.addEventListener('change',update);
+  update();
+})();
+</script>
+
+{% endblock %}

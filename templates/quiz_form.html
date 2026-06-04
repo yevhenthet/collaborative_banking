@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ t('btn_generate_quiz') }} — {{ t('bc_topic') }} {{ topic.number }}{% endblock %}
+{% block content %}
+<div style="max-width:660px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/modules/{{ topic.module_id }}">{{ t('bc_module') }} {{ topic.module.number }}</a></li>
+      <li class="breadcrumb-item"><a href="/topics/{{ topic.id }}">{{ t('bc_topic') }} {{ topic.number }}</a></li>
+      <li class="breadcrumb-item active">{{ t('btn_generate_quiz') }}</li>
+    </ol>
+  </nav>
+
+  <div class="page-header fade-up fade-up-1">
+    <div>
+      <h2>{{ t('topic_quizzes_heading') }}</h2>
+      <div class="subtitle">{{ t('bc_topic') }} {{ topic.number }}. {{ topic.name }}</div>
+    </div>
+  </div>
+
+  {% if not lo_stats %}
+  <div class="alert alert-warning fade-up fade-up-2">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ t('topic_ilo_none') }}
+    <a href="/topics/{{ topic.id }}" class="alert-link">{{ t('bc_topic') }}</a>
+  </div>
+
+  {% else %}
+
+  {% if error == 'no_questions' %}
+  <div class="alert alert-danger fade-up fade-up-2">
+    <i class="bi bi-x-circle me-2"></i>{{ t('topic_ilo_none') }}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/topics/{{ topic.id }}/quizzes" class="fade-up fade-up-2">
+
+    {# ── Quiz name ── #}
+    <div class="mb-4">
+      <label class="form-label fw-semibold">{{ t('form_name') }}</label>
+      <input type="text" name="quiz_name" class="form-control"
+             value="{{ t('topic_quizzes_heading') }} — {{ t('bc_topic') }} {{ topic.number }}. {{ topic.name }}">
+    </div>
+
+    {# ── Per-ILO question count ── #}
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-bullseye me-2"></i>{{ t('topic_ilos_heading') }}</span>
+        <span style="font-size:.75rem; color:var(--text-4)">{{ t('quiz_per_lo_label') }} / ОРН</span>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for item in lo_stats %}
+        <div class="list-group-item py-2 px-3">
+          <div class="d-flex align-items-center gap-3">
+
+            {# Status icon #}
+            {% if item.count > 0 %}
+            <i class="bi bi-check-circle-fill" style="color:#16a34a;flex-shrink:0"></i>
+            {% else %}
+            <i class="bi bi-exclamation-circle-fill" style="color:#dc2626;flex-shrink:0"></i>
+            {% endif %}
+
+            {# ILO text #}
+            <span style="flex:1;font-size:.875rem;color:var(--text-2)">{{ item.lo.text }}</span>
+
+            {# Available badge + number input #}
+            <div class="d-flex align-items-center gap-2" style="flex-shrink:0">
+              <span class="badge {{ 'bg-success keep' if item.count > 0 else 'bg-danger' }}"
+                    style="font-size:.72rem">
+                {{ item.count }} {{ t('quiz_available') }}
+              </span>
+              {% if item.count > 0 %}
+              <input type="number"
+                     name="lo_{{ item.lo.id }}"
+                     class="form-control form-control-sm quiz-lo-count"
+                     style="width:64px; text-align:center"
+                     min="0" max="{{ item.count }}"
+                     value="1"
+                     data-max="{{ item.count }}">
+              {% else %}
+              <input type="hidden" name="lo_{{ item.lo.id }}" value="0">
+              <span style="font-size:.75rem;color:var(--text-4);width:64px;text-align:center">
+                {{ t('quiz_lo_disabled') }}
+              </span>
+              {% endif %}
+            </div>
+
+          </div>
+          {# Warn if requested > available (shown by JS) #}
+          <div class="quiz-warn-{{ item.lo.id }}" style="display:none;font-size:.75rem;color:#d97706;padding-left:28px;margin-top:4px">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <span class="quiz-warn-text"></span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Live total #}
+      <div class="card-footer d-flex justify-content-between align-items-center"
+           style="background:var(--surface-2);font-size:.875rem">
+        <span style="color:var(--text-3)">{{ t('quiz_total_preview') }}</span>
+        <strong id="quizTotalCount">—</strong>
+      </div>
+    </div>
+
+    {# ── Actions ── #}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" id="quizSubmitBtn">
+        <i class="bi bi-journal-check me-1"></i>{{ t('btn_generate_quiz') }}
+      </button>
+      <a href="/topics/{{ topic.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+    </div>
+
+  </form>
+  {% endif %}
+
+</div>
+
+<script>
+(function () {
+  var inputs  = document.querySelectorAll('.quiz-lo-count');
+  var total   = document.getElementById('quizTotalCount');
+  var submit  = document.getElementById('quizSubmitBtn');
+
+  function update() {
+    var sum  = 0;
+    var warn = false;
+    inputs.forEach(function (inp) {
+      var val = parseInt(inp.value, 10) || 0;
+      var max = parseInt(inp.dataset.max, 10);
+      sum += val;
+      var wrapId = inp.name.replace('lo_', '');
+      var warnEl = document.querySelector('.quiz-warn-' + wrapId);
+      if (warnEl) {
+        if (val > max) {
+          warnEl.style.display = '';
+          warnEl.querySelector('.quiz-warn-text').textContent =
+            '{{ t("quiz_available") }}: ' + max;
+          inp.value = max;
+          warn = true;
+        } else {
+          warnEl.style.display = 'none';
+        }
+      }
+    });
+    if (total) total.textContent = sum;
+    if (submit) submit.disabled = (sum === 0);
+  }
+
+  inputs.forEach(function (inp) {
+    inp.addEventListener('input', update);
+    inp.addEventListener('change', update);
+  });
+
+  update();
+})();
+</script>
+{% endblock %}

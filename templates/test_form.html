@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tf_title') }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-4 fade-up">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/faculties/{{ module.discipline.faculty_id }}">{{ module.discipline.faculty.name }}</a></li>
+    <li class="breadcrumb-item"><a href="/disciplines/{{ module.discipline_id }}">{{ module.discipline.name }}</a></li>
+    <li class="breadcrumb-item"><a href="/modules/{{ module.id }}">{{ t('bc_module') }} {{ module.number }}</a></li>
+    <li class="breadcrumb-item active">{{ t('tf_title') }}</li>
+  </ol>
+</nav>
+
+<div class="page-header fade-up fade-up-1">
+  <div>
+    <h2>{{ t('tf_title') }}</h2>
+    <div class="subtitle">{{ t('bc_module') }} {{ module.number }}. {{ module.name }}</div>
+  </div>
+</div>
+
+{% if error is defined and error %}
+<div class="alert alert-danger fade-up fade-up-1">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/modules/{{ module.id }}/tests">
+
+  <div class="row g-3 mb-4 fade-up fade-up-2">
+    <div class="col-md-7">
+      <label class="form-label">{{ t('tf_name_label') }}</label>
+      <input type="text" name="test_name" class="form-control"
+             value="{{ t('bc_module') }} {{ module.number }} — {{ module.name }}">
+    </div>
+    <div class="col-auto">
+      <label class="form-label" for="total_questions">{{ t('test_questions') }}</label>
+      <input type="number" id="total_questions" name="total_questions"
+             class="form-control" style="width:90px" value="30" min="1">
+    </div>
+    <div class="col-auto">
+      <label class="form-label">{{ t('tf_variants_label') }}</label>
+      <select name="n_variants" class="form-select" style="width:90px">
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+    </div>
+  </div>
+
+  {# Distribution preview #}
+  <div class="dist-preview fade-up fade-up-2">
+    <div class="d-flex align-items-center gap-4 mb-3">
+      <div class="dist-pill diff-b-pill">
+        <div class="count" id="count-b">—</div>
+        <span class="diff-b label">{{ diff_label('B') }}</span>
+      </div>
+      <div class="dist-separator"></div>
+      <div class="dist-pill diff-s-pill">
+        <div class="count" id="count-s">—</div>
+        <span class="diff-s label">{{ diff_label('M') }}</span>
+      </div>
+      <div class="dist-separator"></div>
+      <div class="dist-pill diff-v-pill">
+        <div class="count" id="count-v">—</div>
+        <span class="diff-v label">{{ diff_label('H') }}</span>
+        <span style="font-size:.68rem;color:var(--text-4);margin-top:2px">fixed</span>
+      </div>
+    </div>
+    <div class="dist-rubric" id="rubric-hint"></div>
+  </div>
+
+  <div class="form-check mb-4 fade-up fade-up-3">
+    <input class="form-check-input" type="checkbox" name="avoid_recent" id="avoid_recent" checked>
+    <label class="form-check-label" for="avoid_recent">
+      {{ t('tf_avoid_recent') }}
+    </label>
+  </div>
+
+  <h6 class="mb-2 fade-up fade-up-3"
+      style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+    {{ t('mod_col_topic') }}
+  </h6>
+  <div class="list-group mb-4 fade-up fade-up-3">
+    {% for topic in module.topics %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+      <span>
+        <span class="text-muted small me-1">{{ topic.number }}.</span>{{ topic.name }}
+        {% if topic.hours_weight != 1 %}
+        <span class="badge bg-light text-dark border ms-1">×{{ topic.hours_weight }}</span>
+        {% endif %}
+      </span>
+      {% if topic.is_high_stakes %}
+      <span class="badge bg-danger"><i class="bi bi-star-fill me-1"></i>{{ t('mod_key_topic') }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="d-flex gap-2 fade-up fade-up-4">
+    <button type="submit" class="btn btn-success">
+      <i class="bi bi-lightning me-1"></i>{{ t('tf_btn') }}
+    </button>
+    <a href="/modules/{{ module.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+  </div>
+</form>
+
+<script>
+  const T = {{ module.topics | length }};
+  const H = {{ module.topics | selectattr("is_high_stakes") | list | length }};
+
+  function updateDistribution() {
+    const N      = Math.max(1, parseInt(document.getElementById('total_questions').value) || 30);
+    const base   = 2 * T + H;
+    const extra  = Math.max(0, N - base);
+    const extraS = Math.floor(extra / 2);
+    const extraB = extra - extraS;
+    const totalB = T + extraB, totalS = T + extraS, totalV = H;
+    const nBS    = totalB + totalS;
+    const pass   = Math.ceil(0.75 * nBS);
+    const dobrV  = totalV > 1 ? `1–${totalV-1}/${totalV}` : '—';
+
+    document.getElementById('count-b').textContent = totalB;
+    document.getElementById('count-s').textContent = totalS;
+    document.getElementById('count-v').textContent = totalV;
+    document.getElementById('rubric-hint').innerHTML =
+      `<strong>Threshold:</strong> ≥${pass}/${nBS} (B+M) &nbsp;&nbsp;`+
+      `<strong>Grade 3:</strong> 0/${totalV} H &nbsp;&nbsp;`+
+      `<strong>Grade 4:</strong> ${dobrV} H &nbsp;&nbsp;`+
+      `<strong>Grade 5:</strong> ${totalV}/${totalV} H`;
+  }
+
+  document.getElementById('total_questions').addEventListener('input', updateDistribution);
+  updateDistribution();
+</script>
+
+{% endblock %}

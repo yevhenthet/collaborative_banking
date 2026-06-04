@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ t('qf_new_title') }}{% endblock %}
+{% block content %}
+<div style="max-width:860px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/faculties/{{ topic.module.discipline.faculty_id }}">{{ topic.module.discipline.faculty.name }}</a></li>
+      <li class="breadcrumb-item"><a href="/disciplines/{{ topic.module.discipline_id }}">{{ topic.module.discipline.name }}</a></li>
+      <li class="breadcrumb-item"><a href="/modules/{{ topic.module_id }}">{{ t('bc_module') }} {{ topic.module.number }}</a></li>
+      <li class="breadcrumb-item"><a href="/topics/{{ topic.id }}">{{ t('bc_topic') }} {{ topic.number }}</a></li>
+      <li class="breadcrumb-item active">{{ t('qf_new_title') }}</li>
+    </ol>
+  </nav>
+
+  <div class="page-header fade-up fade-up-1">
+    <div>
+      <h2>{{ t('qf_new_title') }}</h2>
+      <div class="subtitle">{{ topic.name }}</div>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 fade-up">
+    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/topics/{{ topic.id }}/questions">
+
+    <div class="mb-3 fade-up fade-up-2">
+      <label class="form-label">{{ t('qf_text_label') }} *</label>
+      <textarea name="text" class="form-control" rows="3" required
+                placeholder="{{ t('qf_text_placeholder') }}"></textarea>
+    </div>
+
+    <div class="mb-4 fade-up fade-up-2">
+      <label class="form-label">
+        {{ t('qf_model_answer_label') }}
+        <span class="text-muted fw-normal small">({{ t('qf_model_answer_placeholder') }})</span>
+      </label>
+      <textarea name="model_answer" class="form-control" rows="2"
+                placeholder="{{ t('qf_model_answer_placeholder') }}"></textarea>
+    </div>
+
+    <div class="row g-3 mb-4 fade-up fade-up-3">
+
+      <div class="col-md-6">
+        <label class="form-label">{{ t('qf_diff_label') }} *</label>
+        <div class="d-flex flex-column gap-2">
+          {% for diff in difficulties %}
+          {% set bd = bloom_detail(diff.value) %}
+          <div class="bloom-card">
+            <input class="form-check-input visually-hidden" type="radio" name="proposed_difficulty"
+                   id="diff_{{ diff.value }}" value="{{ diff.value }}"
+                   {% if loop.first %}checked{% endif %} required>
+            <label class="d-block" for="diff_{{ diff.value }}" style="cursor:pointer">
+              <div class="bloom-header">
+                <span class="{{ 'diff-b' if diff.value=='B' else ('diff-s' if diff.value=='M' else 'diff-v') }}">
+                  {{ diff_label(diff.value) }}
+                </span>
+                <span class="bloom-title">{{ bd.title }}</span>
+              </div>
+              <div class="bloom-detail-text">{{ bd.detail }}</div>
+              <div class="bloom-verbs"><i class="bi bi-cursor-text me-1"></i>{{ bd.verbs }}</div>
+              <div class="bloom-example"><i class="bi bi-chat-square-quote me-1"></i>{{ bd.example }}</div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">{{ t('qf_type_label') }}</label>
+        <div class="d-flex flex-column gap-2">
+          <div class="qtype-card">
+            <input class="form-check-input visually-hidden" type="radio"
+                   name="question_type" id="qt_none" value="" checked>
+            <label class="d-block" for="qt_none" style="cursor:pointer">
+              <div class="qtype-header">
+                <span class="qtype-name text-muted">{{ t('qf_type_none') }}</span>
+              </div>
+            </label>
+          </div>
+          {% for qt in question_types %}
+          {% set td = type_detail(qt.value) %}
+          <div class="qtype-card">
+            <input class="form-check-input visually-hidden" type="radio"
+                   name="question_type" id="qt_{{ qt.value }}" value="{{ qt.value }}">
+            <label class="d-block" for="qt_{{ qt.value }}" style="cursor:pointer">
+              <div class="qtype-header">
+                <span class="qtype-name">{{ type_label(qt.value) }}</span>
+                {% if td.bloom %}
+                <span class="qtype-bloom">{{ td.bloom }}</span>
+                {% endif %}
+              </div>
+              <div class="qtype-detail-text">{{ td.detail }}</div>
+              <div class="qtype-example"><i class="bi bi-chat-square-quote me-1"></i>{{ td.example }}</div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4 fade-up fade-up-4">
+      <label class="form-label">
+        {{ t('qf_ilo_label') }} *
+        <span class="text-muted fw-normal small">{{ t('qf_select_ilo_required') if topic_los else '' }}</span>
+      </label>
+
+      {% if topic_los %}
+      <div class="lo-radio-list">
+        {% for lo in topic_los %}
+        <div class="lo-radio-card">
+          <input type="radio" class="lo-radio-input" name="learning_outcome_id"
+                 id="lo_{{ lo.id }}" value="{{ lo.id }}" required>
+          <label class="lo-radio-label" for="lo_{{ lo.id }}">
+            <span class="lo-radio-num">{{ loop.index }}</span>
+            <span class="lo-radio-text">{{ lo.text }}</span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="alert alert-warning py-2 px-3" style="font-size:.84rem">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ t('qf_no_ilo_warning') }}
+        <a href="/topics/{{ topic.id }}" class="alert-link">{{ t('bc_topic') }}</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2 fade-up fade-up-4">
+      <button type="submit" class="btn btn-primary" {% if not topic_los %}disabled{% endif %}>
+        <i class="bi bi-plus-lg me-1"></i>{{ t('btn_submit_new') }}
+      </button>
+      <a href="/topics/{{ topic.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

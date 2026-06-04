@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tr_title') }} — {{ test.name }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-4 fade-up">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/modules/{{ test.module_id }}/tests">{{ t('tests_title') }}</a></li>
+    <li class="breadcrumb-item"><a href="/tests/{{ test.id }}">{{ test.name }}</a></li>
+    <li class="breadcrumb-item active">{{ t('tr_enter') }}</li>
+  </ol>
+</nav>
+
+<div class="page-header fade-up fade-up-1">
+  <div>
+    <h2>{{ t('tr_title') }}</h2>
+    <div class="subtitle">{{ test.name }}</div>
+  </div>
+</div>
+
+<form method="post" action="/tests/{{ test.id }}/results" style="max-width:760px">
+
+  <div class="card mb-4 fade-up fade-up-2">
+    <div class="card-body">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div>
+          <label class="form-label mb-1">{{ t('test_questions') }}</label>
+          <input type="number" name="total_students" id="total_students" class="form-control" style="width:130px"
+                 min="0" value="{{ existing.values() | map(attribute='total_students') | first | default(0) }}"
+                 required oninput="updateGroupSize(this.value)">
+        </div>
+        <div>
+          <label class="form-label mb-1">{{ t('ia_score_mean') }}</label>
+          <input type="number" name="score_mean" class="form-control" style="width:130px"
+                 step="0.01" min="0" value="{{ test.result_mean if test.result_mean is not none else '' }}"
+                 placeholder="—">
+        </div>
+        <div>
+          <label class="form-label mb-1" title="{{ t('ia_score_sd_hint') }}">
+            {{ t('ia_score_sd') }} <i class="bi bi-info-circle" style="font-size:.8rem;color:var(--text-4)"></i>
+          </label>
+          <input type="number" name="score_sd" class="form-control" style="width:130px"
+                 step="0.01" min="0" value="{{ test.result_sd if test.result_sd is not none else '' }}"
+                 placeholder="—">
+        </div>
+        <div style="font-size:.82rem;color:var(--text-3);padding-top:24px">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ t('ia_upper_lower_hint') }}
+          &nbsp;·&nbsp;
+          {{ t('ia_group_size') }}: <strong id="group-size-display">—</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% set all_q = test.test_questions | map(attribute='question') | list %}
+  {% set b_qs = all_q | selectattr("final_difficulty.value", "equalto", "B") | list %}
+  {% set s_qs = all_q | selectattr("final_difficulty.value", "equalto", "M") | list %}
+  {% set v_qs = all_q | selectattr("final_difficulty.value", "equalto", "H") | list %}
+
+  {% set q_num = namespace(n=1) %}
+  {% set delay = namespace(d=2) %}
+  {% for section_key, section_qs, diff_cls in [
+      ("test_b_section", b_qs, "diff-b"),
+      ("test_m_section", s_qs, "diff-s"),
+      ("test_h_section", v_qs, "diff-v")
+  ] %}
+  {% if section_qs %}
+  <h6 class="mt-3 mb-2 fade-up fade-up-{{ delay.d }}"
+      style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+    {{ t(section_key) }}
+  </h6>
+  {% set delay.d = [delay.d + 1, 5] | min %}
+  {% for q in section_qs %}
+  <div class="card mb-2 fade-up fade-up-{{ delay.d }}">
+    <div class="card-body py-2 px-3">
+      {# Main row: question text + correct count #}
+      <div class="d-flex align-items-start gap-3 mb-2">
+        <span class="{{ diff_cls }}" style="flex-shrink:0;padding-top:2px">{{ q_num.n }}</span>
+        <div style="flex:1;min-width:0">
+          <div>{{ q.text }}</div>
+          {% if q.model_answer %}
+          <div class="small text-success mt-1">
+            <i class="bi bi-check-circle me-1"></i>{{ q.model_answer }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="input-group input-group-sm flex-shrink-0" style="width:150px">
+          <input type="number" name="correct_{{ q.id }}" class="form-control text-center"
+                 min="0" value="{{ existing[q.id].correct_count if q.id in existing else 0 }}"
+                 placeholder="0">
+          <span class="input-group-text">{{ t('q_facility_correct') }}</span>
+        </div>
+      </div>
+      {# Discrimination row: upper/lower 27% (collapsible, always shown) #}
+      <div class="d-flex gap-2 align-items-center ms-4 ps-2" style="border-left:2px solid var(--bg-3)">
+        <span style="font-size:.72rem;color:var(--text-4);min-width:80px">{{ t('ia_d_upper') }}</span>
+        <input type="number" name="upper_{{ q.id }}" class="form-control form-control-sm text-center"
+               style="width:80px" min="0"
+               value="{{ existing[q.id].upper_correct if q.id in existing and existing[q.id].upper_correct is not none else '' }}"
+               placeholder="—">
+        <span style="font-size:.72rem;color:var(--text-4);min-width:80px">{{ t('ia_d_lower') }}</span>
+        <input type="number" name="lower_{{ q.id }}" class="form-control form-control-sm text-center"
+               style="width:80px" min="0"
+               value="{{ existing[q.id].lower_correct if q.id in existing and existing[q.id].lower_correct is not none else '' }}"
+               placeholder="—">
+        <span class="group-size-hint" style="font-size:.72rem;color:var(--text-4)"></span>
+      </div>
+    </div>
+  </div>
+  {% set q_num.n = q_num.n + 1 %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+
+  <div class="d-flex gap-2 mt-4 fade-up">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-floppy me-1"></i>{{ t('btn_save') }}
+    </button>
+    <a href="/tests/{{ test.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+  </div>
+</form>
+
+<script>
+function updateGroupSize(n) {
+  n = parseInt(n) || 0;
+  const gn = n >= 6 ? Math.floor(n * 0.27) : null;
+  document.getElementById('group-size-display').textContent = gn ? gn : '—';
+  document.querySelectorAll('.group-size-hint').forEach(el => {
+    el.textContent = gn ? ('/ ' + gn) : '';
+  });
+  // Cap upper/lower inputs at group size
+  document.querySelectorAll('input[name^="upper_"], input[name^="lower_"]').forEach(inp => {
+    if (gn) inp.max = gn; else inp.removeAttribute('max');
+  });
+}
+updateGroupSize(document.getElementById('total_students').value);
+</script>
+
+{% endblock %}

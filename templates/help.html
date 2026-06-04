@@ -1,0 +1,646 @@
+{% extends "base.html" %}
+{% block title %}{{ t('help_title') }}{% endblock %}
+{% block content %}
+<div style="max-width:860px">
+
+  <div class="page-header fade-up">
+    <div>
+      <h2>{{ t('help_title') }}</h2>
+      <div class="subtitle">{{ t('app_name') }} — {{ t('app_subtitle') }}</div>
+    </div>
+  </div>
+
+  {# ── Nav tabs ── #}
+  <ul class="nav nav-tabs mb-4 fade-up fade-up-1" id="helpTabs">
+    <li class="nav-item"><a class="nav-link active" href="#voting"   data-section="voting">{{ t('nav_vote') }}</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#tests"    data-section="tests">{{ t('mod_generate_test') }}</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#question" data-section="question">{{ t('bc_question') }}</a></li>
+    <li class="nav-item"><a class="nav-link"        href="#module"   data-section="module">{{ t('bc_module') }} / {{ t('bc_topic') }}</a></li>
+  </ul>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION: VOTING                                           #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="help-section" id="sec-voting">
+
+    <div class="help-hero fade-up fade-up-2">
+      <div class="help-hero-icon"><i class="bi bi-check2-square"></i></div>
+      <div>
+        {% if get_lang() == 'en' %}
+        <h4>Collegial peer review of questions</h4>
+        <p>A consensus-based item approval mechanism that minimises systematic bias and enhances the measurement validity of the bank.</p>
+        {% else %}
+        <h4>Колегіальне рецензування питань</h4>
+        <p>Механізм консенсусного затвердження завдань, що мінімізує систематичне упередження й підвищує вимірювальну валідність банку.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="help-card fade-up fade-up-2">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">How it works</div>
+      <p>As soon as a teacher creates a question it enters the voting queue for all colleagues. Each reviewer votes independently — <strong>approve or reject</strong> — and rates the item on five quality criteria. Once quorum is reached the system automatically tallies the outcome:</p>
+      <ul>
+        <li>if the majority approves — the question receives status <span class="badge bg-success keep">Active</span> and enters the bank</li>
+        <li>if the majority rejects — the question is returned to the author for revision and a new round begins</li>
+      </ul>
+      {% else %}
+      <div class="help-card-label">Як це працює</div>
+      <p>Щойно викладач створює питання, воно потрапляє до черги голосування всіх колег. Кожен голосує незалежно — <strong>схвалити чи відхилити</strong> — і виставляє оцінку за п'ятьма критеріями якості. Коли кворум набрано, система автоматично підраховує результат:</p>
+      <ul>
+        <li>якщо більшість схвалює — питання отримує статус <span class="badge bg-success keep">Активне</span> і потрапляє до банку</li>
+        <li>якщо більшість відхиляє — питання повертається автору на доопрацювання і починається новий раунд</li>
+      </ul>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Round system</div>
+      <p>Instead of a final rejection, a question may go through <strong>multiple rounds</strong>. After rejection the author edits the wording, learning objective, or model answer — and the question re-enters voting. Votes from previous rounds are archived for retrospective analysis.</p>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        The number of rounds and quorum threshold are configurable by an administrator in Settings.
+      </div>
+      {% else %}
+      <div class="help-card-label">Система раундів</div>
+      <p>Замість остаточного відхилення питання може пройти <strong>кілька раундів</strong>. Після відхилення автор редагує текст, навчальну мету або еталонну відповідь — і питання знову виходить на голосування. Голоси попереднього раунду зберігаються в архіві для ретроспективного аналізу.</p>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        Кількість раундів і поріг кворуму налаштовуються адміністратором у розділі «Налаштування».
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      <div class="help-card-label"><i class="bi bi-mortarboard me-2"></i>
+        {% if get_lang() == 'en' %}Delphi method and psychometric rationale for consensus{% else %}Дельфійський метод та психометричне обґрунтування консенсусу{% endif %}
+      </div>
+      {% if get_lang() == 'en' %}
+      <p>The traditional single-reviewer item approval model is epistemologically fragile: any unilateral decision carries the systematic bias of a specific expert — their academic school, pedagogical priorities, and tolerance for ambiguity. The Delphi method, proposed by Dalkey and Helmer (<em>Dalkey &amp; Helmer, 1963</em>) at RAND Corporation as a tool for technological forecasting, addresses this structurally: several independent experts express judgements iteratively without knowing each other's positions, preventing conformism and the "loudest voice" effect. Today the method is widely used in the development of standards and assessment instruments in higher medical education (<em>Hasson et al., 2000</em>).</p>
+      <p>The statistical basis for quorum rests on the variance-reduction theorem for averaging independent estimates. If each reviewer introduces a measurement error with mean zero and variance σ², the mean of <em>n</em> independent ratings has variance σ²/<em>n</em> — accuracy grows proportionally to the square root of the number of reviewers. However, independence is the key condition: if reviewers consult each other before voting, variance does not decrease according to the theoretical prediction. This is why anonymity and sequential rounds are integral to the procedure.</p>
+      <p>Cohen's kappa (<em>Cohen, 1960</em>) is used for quantitative inter-rater reliability assessment — a measure correcting the percentage of agreement for the level of chance agreement: κ = (P<sub>o</sub> − P<sub>e</sub>) / (1 − P<sub>e</sub>). Values of κ &lt; 0.40 indicate weak agreement and signal that review criteria are insufficiently clear. For item banks in medical education an acceptable minimum is κ ≥ 0.60 (<em>Hasson et al., 2000</em>).</p>
+      <p>The central psychometric argument for peer review is <strong>construct-irrelevant variance</strong>, developed by Samuel Messick within his unified validity theory (<em>Messick, 1995</em>). Construct-irrelevant variance arises when a student receives a lower score not due to lack of knowledge but due to external artefacts — grammatical complexity, double negation, or lexical ambiguity. Multi-rater assessment reduces this risk through two channels: different reviewers identify different problem types, and vote counting converts subjective judgement into a numerical signal that is documented and analysable.</p>
+      {% else %}
+      <p>Традиційна модель затвердження тестових завдань одним рецензентом є епістемологічно вразливою. Дельфійський метод (<em>Dalkey &amp; Helmer, 1963</em>) вирішує цю проблему структурно: кілька незалежних експертів висловлюють судження ітеративно, не знаючи позицій одне одного, що запобігає конформізму.</p>
+      <p>Для кількісної оцінки узгодженості застосовується коефіцієнт каппа Коена (<em>Cohen, 1960</em>): κ = (P<sub>o</sub> − P<sub>e</sub>) / (1 − P<sub>e</sub>). Значення κ &lt; 0,40 свідчить про слабку узгодженість. Для банків у медичній освіті мінімум — κ ≥ 0,60 (<em>Hasson et al., 2000</em>).</p>
+      <p>Ключовий аргумент — концепція <strong>конструктно-іррелевантної варіативності</strong> (<em>Messick, 1995</em>): студент отримує нижчий бал через зовнішні артефакти формулювання, а не через брак знань. Мультиоцінювання знижує цей ризик.</p>
+      {% endif %}
+    </div>
+
+    <h5 class="help-subsection-title fade-up fade-up-3">{{ t('vote_criteria') }}</h5>
+
+    <div class="help-criteria-grid fade-up fade-up-4">
+
+      <div class="help-criterion">
+        <div class="help-criterion-head">
+          <i class="bi bi-pencil-square"></i>
+          <strong>{{ t('crit_wording') }}</strong>
+        </div>
+        {% if get_lang() == 'en' %}
+        <p>Assesses whether the question wording is unambiguous, grammatically correct, and clearly defines the expected scope of the answer.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Unclear</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Acceptable</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Clear</span>
+        </div>
+        <p class="help-rationale">Ambiguous wording is the most common source of systematic measurement error: the student expends cognitive resources decoding the text rather than demonstrating knowledge (<em>Messick, 1995</em>). Undefined response scope is also rated here — "Unclear" is given when it is not evident whether one sentence or an extended analysis is expected.</p>
+        {% else %}
+        <p>Оцінює, наскільки текст питання однозначний, граматично коректний і чітко визначає очікуваний обсяг відповіді.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Нечітке</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Прийнятне</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Чітке</span>
+        </div>
+        <p class="help-rationale">Двозначне формулювання є найпоширенішою причиною систематичних похибок вимірювання (<em>Messick, 1995</em>). Сюди належить і невизначений обсяг відповіді.</p>
+        {% endif %}
+      </div>
+
+      <div class="help-criterion">
+        <div class="help-criterion-head">
+          <i class="bi bi-bullseye"></i>
+          <strong>{{ t('crit_lo') }}</strong>
+        </div>
+        {% if get_lang() == 'en' %}
+        <p>Checks whether the question genuinely measures the stated ILO and not a related or broader construct.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Absent</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Partial</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Exact</span>
+        </div>
+        <p class="help-rationale"><strong>Constructive alignment</strong> (<em>Biggs, 1999</em>): learning outcomes, teaching activities, and assessments must form a coherent system. "Partial" alignment is particularly dangerous — the question appears to cover the ILO but actually measures something adjacent, distorting coverage analytics.</p>
+        {% else %}
+        <p>Перевіряє, чи питання дійсно вимірює заявлений ОРН, а не суміжний або ширший конструкт.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Відсутня</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Часткова</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Точна</span>
+        </div>
+        <p class="help-rationale"><strong>Конструктивне узгодження</strong> (<em>Biggs, 1999</em>): ОРН, навчальна діяльність і оцінювання мають утворювати єдину систему. «Часткова» відповідність спотворює аналітику покриття.</p>
+        {% endif %}
+      </div>
+
+      <div class="help-criterion">
+        <div class="help-criterion-head">
+          <i class="bi bi-layers"></i>
+          <strong>{{ t('crit_bloom') }}</strong>
+        </div>
+        {% if get_lang() == 'en' %}
+        <p>Determines whether the cognitive demand of the question matches the level declared in the ILO.</p>
+        <div class="help-scale">
+          <span class="hs-warn">Under-estimated</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Correct</span><span class="hs-arrow">→</span>
+          <span class="hs-warn">Over-estimated</span>
+        </div>
+        <p class="help-rationale">A recall question in a course where the ILO requires analysis gives a false signal about competency attainment (<em>Anderson &amp; Krathwohl, 2001</em>). An over-estimated Bloom level is also a problem: it overloads the student's cognitive resources regardless of their knowledge (<em>Sweller, 1988</em>).</p>
+        {% else %}
+        <p>Визначає, чи когнітивна складність питання відповідає тій, що задекларована у ОРН.</p>
+        <div class="help-scale">
+          <span class="hs-warn">Занижений</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Правильний</span><span class="hs-arrow">→</span>
+          <span class="hs-warn">Завищений</span>
+        </div>
+        <p class="help-rationale">Питання на запам'ятовування у курсі, де ОРН вимагає аналізу, дає хибний сигнал (<em>Anderson &amp; Krathwohl, 2001</em>). Завищений рівень Блума перевантажує когнітивний ресурс студента (<em>Sweller, 1988</em>).</p>
+        {% endif %}
+      </div>
+
+      <div class="help-criterion">
+        <div class="help-criterion-head">
+          <i class="bi bi-check-circle"></i>
+          <strong>{{ t('crit_answer') }}</strong>
+        </div>
+        {% if get_lang() == 'en' %}
+        <p>Evaluates the completeness and clarity of the model answer, which sets the standard for scoring.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Absent</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Adequate</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Complete</span>
+        </div>
+        <p class="help-rationale">Without a model answer, different examiners will score the same student response differently — creating <strong>inter-rater unreliability</strong>. A complete model answer is a prerequisite for any standardised assessment (<em>Ebel &amp; Frisbie, 1991</em>). "Adequate" means the answer covers key aspects but may be incomplete or lack clinical nuance.</p>
+        {% else %}
+        <p>Оцінює повноту та чіткість зразкової відповіді, що визначає стандарт оцінювання.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Відсутня</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Достатня</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Вичерпна</span>
+        </div>
+        <p class="help-rationale">Без еталонної відповіді різні екзаменатори оцінюватимуть ту саму відповідь студента по-різному — виникає <strong>міжоцінювальна ненадійність</strong> (<em>Ebel &amp; Frisbie, 1991</em>).</p>
+        {% endif %}
+      </div>
+
+      <div class="help-criterion" style="grid-column:span 2">
+        <div class="help-criterion-head">
+          <i class="bi bi-shield-check"></i>
+          <strong>{{ t('crit_accuracy') }}</strong>
+        </div>
+        {% if get_lang() == 'en' %}
+        <p>Verifies that neither the question nor the model answer contains factual errors in the medical content.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Errors</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Inaccuracies</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Accurate</span>
+        </div>
+        <p class="help-rationale">This criterion differs from the others in its logic: the first four are <em>pedagogical</em> — they assess measurement properties. This one is <em>content-based</em>: it protects the bank from propagating incorrect knowledge. Haladyna and Downing (<em>Haladyna &amp; Downing, 2002</em>) treat content accuracy as a prerequisite — any score below "Accurate" is grounds for rejection regardless of the other scores.</p>
+        <div class="help-tip mt-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          <strong>Errors</strong> — facts or mechanisms contradicting current sources. <strong>Inaccuracies</strong> — oversimplification, outdated classifications, terminological imprecision. <strong>Accurate</strong> — confirmed by current textbooks or clinical guidelines.
+        </div>
+        {% else %}
+        <p>Перевіряє, чи не містить питання або еталонна відповідь фактичних помилок у медичному змісті.</p>
+        <div class="help-scale">
+          <span class="hs-bad">Помилки</span><span class="hs-arrow">→</span>
+          <span class="hs-mid">Неточності</span><span class="hs-arrow">→</span>
+          <span class="hs-good">Точна</span>
+        </div>
+        <p class="help-rationale">Цей критерій є <em>змістовим</em> — захищає банк від поширення неправильних знань. Халадіна та Даунінг (<em>Haladyna &amp; Downing, 2002</em>) розглядають змістову точність як передумову — будь-яка оцінка нижче «Точна» є підставою для відхилення.</p>
+        <div class="help-tip mt-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          <strong>Помилки</strong> — нові факти або механізми, що суперечать сучасним джерелам. <strong>Неточності</strong> — надмірне спрощення, застарілі класифікації. <strong>Точна</strong> — підтверджена поточними підручниками або клінічними настановами.
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div class="help-card fade-up fade-up-4">
+      <div class="help-card-label">{% if get_lang() == 'en' %}Key references{% else %}Ключові джерела{% endif %}</div>
+      <ul class="help-refs">
+        <li>Dalkey, N., &amp; Helmer, O. (1963). An experimental application of the Delphi method to the use of experts. <em>Management Science, 9</em>(3), 458–467.</li>
+        <li>Messick, S. (1995). Validity of psychological assessment. <em>American Psychologist, 50</em>(9), 741–749.</li>
+        <li>Hasson, F., Keeney, S., &amp; McKenna, H. (2000). Research guidelines for the Delphi survey technique. <em>Journal of Advanced Nursing, 32</em>(4), 1008–1015.</li>
+        <li>Cohen, J. (1960). A coefficient of agreement for nominal scales. <em>Educational and Psychological Measurement, 20</em>(1), 37–46.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION: TEST GENERATION                                  #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="help-section d-none" id="sec-tests">
+
+    <div class="help-hero fade-up fade-up-2">
+      <div class="help-hero-icon"><i class="bi bi-file-earmark-text"></i></div>
+      <div>
+        {% if get_lang() == 'en' %}
+        <h4>Test generation and Classical Test Theory</h4>
+        <p>Automatic assembly of tests from a specification table and the scientific foundations of item analysis.</p>
+        {% else %}
+        <h4>Генерація тестів та класична теорія тестів</h4>
+        <p>Автоматичне складання тестів за специфікаційною таблицею та наукові основи аналізу завдань.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="help-card fade-up fade-up-2">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">How it works</div>
+      <p>The system analyses approved items in the module and distributes them by topic and difficulty tier. You set the total number of questions and number of variants — the system automatically:</p>
+      <ol>
+        <li>computes a <strong>specification table</strong> (how many questions from each topic and each tier)</li>
+        <li>randomly selects questions according to the table</li>
+        <li>generates an independent sample for each variant, avoiding repetition</li>
+      </ol>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        The "Avoid recently used" option filters out questions from the last two tests of the module — reducing the chance students have memorised answers.
+      </div>
+      {% else %}
+      <div class="help-card-label">Як це працює</div>
+      <p>Система аналізує затверджені питання модуля і розподіляє їх за темами та рівнями складності. Ви задаєте загальну кількість питань і кількість варіантів — система автоматично:</p>
+      <ol>
+        <li>обчислює <strong>специфікаційну таблицю</strong></li>
+        <li>випадково обирає питання згідно таблиці</li>
+        <li>для кожного варіанту генерує незалежну вибірку, уникаючи повторів</li>
+      </ol>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        Опція «Уникати нещодавно використаних» відсіває питання з двох останніх тестів модуля.
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Difficulty distribution (B / M / H) and Bloom's taxonomy</div>
+      <p>The three difficulty tiers correspond to cognitive levels of the revised Bloom's taxonomy (<em>Anderson &amp; Krathwohl, 2001</em>):</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="diff-b">B — Basic</span>
+          <span>Remember, understand. Tests basic knowledge of terms, definitions, facts. Miller's pyramid — "knows" level (<em>Miller, 1990</em>).</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="diff-s">M — Moderate</span>
+          <span>Apply, analyse. Requires solving typical clinical problems. "Knows how" level.</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="diff-v">H — Higher-order</span>
+          <span>Evaluate, synthesise. Atypical situations, argumentation, differential diagnosis. "Shows how" level.</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="help-card-label">Розподіл за складністю (Б / С / В) та таксономія Блума</div>
+      <p>Три рівні складності відповідають когнітивним рівням переглянутої таксономії Блума (<em>Anderson &amp; Krathwohl, 2001</em>):</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="diff-b">Б — Базовий</span>
+          <span>Пам'ятати, розуміти. Перевіряє базові знання термінів, визначень, фактів. За пірамідою Міллера — рівень «знає» (<em>Miller, 1990</em>).</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="diff-s">С — Середній</span>
+          <span>Застосовувати, аналізувати. Вимагає розв'язання типових клінічних задач. Рівень «знає як».</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="diff-v">В — Вищий</span>
+          <span>Оцінювати, синтезувати. Нетипові ситуації, аргументація, диференційна діагностика. Рівень «показує як».</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">ILO coverage</div>
+      <p>On each test page an ILO coverage panel is displayed: for each topic it shows which intended learning outcomes are covered by at least one question and which are not. Uncovered ILOs are marked <i class="bi bi-circle text-muted"></i>, covered ones <i class="bi bi-check-circle-fill text-success"></i>.</p>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        If an important ILO is not covered, return to the topic and add the relevant questions to the bank.
+      </div>
+      {% else %}
+      <div class="help-card-label">Покриття ОРН</div>
+      <p>На сторінці кожного тесту відображається панель покриття ОРН: для кожної теми показано, які ОРН охоплені хоча б одним питанням, а які — ні.</p>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        Якщо важливий ОРН не покритий, поверніться до теми й додайте відповідні питання до банку.
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      <div class="help-card-label"><i class="bi bi-mortarboard me-2"></i>
+        {% if get_lang() == 'en' %}Classical Test Theory: item analysis and reliability{% else %}Класична теорія тестів: аналіз завдань та параметри надійності{% endif %}
+      </div>
+      {% if get_lang() == 'en' %}
+      <p>Classical Test Theory (CTT), systematically developed by Lord and Novick (<em>Lord &amp; Novick, 1968</em>), is based on the fundamental score decomposition: <strong>X = T + E</strong>, where X is the observed score, T is the true score (unknown), and E is random measurement error. Item analysis aims to identify questions that maximise the signal-to-noise ratio.</p>
+      <p><strong>Item facility (p-value)</strong> is the proportion of students who answered correctly: p = n<sub>correct</sub> / N<sub>total</sub>. The optimal range for MCQ items is 0.30–0.70 (<em>Haladyna &amp; Rodriguez, 2013</em>). Items with p &gt; 0.85 do not discriminate; items with p &lt; 0.20 may indicate unclear wording or an atypical clinical scenario.</p>
+      <p><strong>Discrimination (r<sub>pbis</sub>)</strong> — the point-biserial correlation between the dichotomous item score and the total test score. Minimum acceptable threshold: r<sub>pbis</sub> ≥ 0.20 (<em>Ebel &amp; Frisbie, 1991</em>). A negative r<sub>pbis</sub> is pathological and almost always indicates a defect — a miskeyed answer or an ambiguous stem.</p>
+      <p><strong>Test reliability</strong> is assessed via Cronbach's alpha (<em>Cronbach, 1951</em>). Minimum acceptable threshold: α ≥ 0.70 for moderate-stakes tests; α ≥ 0.80 for summative and licensing examinations (<em>NBME, 2020</em>).</p>
+      {% else %}
+      <p>Класична теорія тестів (CTT) базується на декомпозиції балу: <strong>X = T + E</strong>. <strong>Індекс легкості (p-value)</strong>: p = n<sub>correct</sub> / N<sub>total</sub>. Оптимальний діапазон — 0,30–0,70 (<em>Haladyna &amp; Rodriguez, 2013</em>). <strong>Дискримінантна здатність (r<sub>pbis</sub>)</strong> ≥ 0,20 (<em>Ebel &amp; Frisbie, 1991</em>). Від'ємний r<sub>pbis</sub> свідчить про дефект конструкції. <strong>Надійність</strong> — альфа Кронбаха ≥ 0,70 для поточних тестів, ≥ 0,80 для підсумкових (<em>NBME, 2020</em>).</p>
+      {% endif %}
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        {% if get_lang() == 'en' %}Items with p &gt; 0.85 should be reclassified from tier H to tier B; items with r<sub>pbis</sub> &lt; 0.20 require editing or removal.
+        {% else %}Питання з p &gt; 0,85 слід перекласифікувати з тіру В до тіру Б; питання з r<sub>pbis</sub> &lt; 0,20 вимагає редагування або вилучення.{% endif %}
+      </div>
+    </div>
+
+    <div class="help-card fade-up fade-up-4">
+      <div class="help-card-label">{% if get_lang() == 'en' %}Key references{% else %}Ключові джерела{% endif %}</div>
+      <ul class="help-refs">
+        <li>Lord, F. M., &amp; Novick, M. R. (1968). <em>Statistical theories of mental test scores.</em> Addison-Wesley.</li>
+        <li>Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. <em>Psychometrika, 16</em>(3), 297–334.</li>
+        <li>Haladyna, T. M., &amp; Rodriguez, M. C. (2013). <em>Developing and validating test items.</em> Routledge.</li>
+        <li>Ebel, R. L., &amp; Frisbie, D. A. (1991). <em>Essentials of educational measurement</em> (5th ed.). Prentice Hall.</li>
+        <li>Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A taxonomy for learning, teaching, and assessing.</em> Longman.</li>
+        <li>Miller, G. E. (1990). The assessment of clinical skills/competence/performance. <em>Academic Medicine, 65</em>(9 Suppl), S63–S67.</li>
+        <li>NBME. (2020). <em>Constructing written test questions for the basic and clinical sciences</em> (4th ed.).</li>
+      </ul>
+    </div>
+
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION: QUESTION DETAIL                                  #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="help-section d-none" id="sec-question">
+
+    <div class="help-hero fade-up fade-up-2">
+      <div class="help-hero-icon"><i class="bi bi-journal-text"></i></div>
+      <div>
+        {% if get_lang() == 'en' %}
+        <h4>Question card</h4>
+        <p>Full specification of a single question: content, metadata, reviewer votes, and empirical data.</p>
+        {% else %}
+        <h4>Картка питання</h4>
+        <p>Повна специфікація одного питання: зміст, метадані, голоси рецензентів та емпіричні дані.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="help-card fade-up fade-up-2">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Question components</div>
+      <div class="help-components">
+        <div class="help-comp-row">
+          <div class="help-comp-name">Question text</div>
+          <div class="help-comp-desc">The stem the student sees. Must unambiguously indicate what needs to be answered.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Intended Learning Outcome (ILO)</div>
+          <div class="help-comp-desc">The topic ILO this question measures. The basis for computing ILO coverage in a test.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Model answer</div>
+          <div class="help-comp-desc">The correct and complete answer. Used for consistent scoring and as a reference for reviewers.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Difficulty (B / M / H)</div>
+          <div class="help-comp-desc">Cognitive complexity proposed by the author and confirmed by voting, according to Bloom's taxonomy.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Question type</div>
+          <div class="help-comp-desc">Factual, mechanism, clinical, comparative. Affects assessment format and methodological analytics.</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="help-card-label">Компоненти питання</div>
+      <div class="help-components">
+        <div class="help-comp-row">
+          <div class="help-comp-name">Текст питання</div>
+          <div class="help-comp-desc">Формулювання, яке бачить студент. Має однозначно вказувати, що саме потрібно відповісти.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Очікуваний результат навчання (ОРН)</div>
+          <div class="help-comp-desc">ОРН теми, який вимірює це питання. Основа для розрахунку покриття ОРН у тесті.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Еталонна відповідь</div>
+          <div class="help-comp-desc">Правильна і повна відповідь для узгодженого оцінювання та як довідка для рецензентів.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Складність (Б / С / В)</div>
+          <div class="help-comp-desc">Пропонована автором і затверджена голосуванням когнітивна складність за таксономією Блума.</div>
+        </div>
+        <div class="help-comp-row">
+          <div class="help-comp-name">Тип питання</div>
+          <div class="help-comp-desc">Фактологічне, механізм, клінічне, порівняльне. Впливає на формат оцінювання і методичний аналіз.</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Empirical facility index</div>
+      <p>After tests are administered, the "% correct responses" field shows the <strong>empirical facility value (p-value)</strong> — the proportion of students who answered correctly across all tests where this item was used.</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="badge bg-success keep">≥ 75%</span>
+          <span>Easy — possibly insufficient discriminating power</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="badge bg-warning">50–74%</span>
+          <span>Moderate — optimal discrimination zone</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="badge bg-danger">&lt; 50%</span>
+          <span>Difficult — consider reviewing the wording or model answer</span>
+        </div>
+      </div>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        If empirical difficulty consistently diverges from the assigned tier — this is a signal to review or reclassify the question.
+      </div>
+      {% else %}
+      <div class="help-card-label">Емпіричний індекс складності</div>
+      <p>Після проведення тестів у полі «% правильних відповідей» з'являється <strong>емпіричний показник легкості (p-value)</strong>.</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="badge bg-success keep">≥ 75%</span>
+          <span>Легке — можлива недостатня дискримінантна здатність</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="badge bg-warning">50–74%</span>
+          <span>Середнє — оптимальна дискримінантна зона</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="badge bg-danger">&lt; 50%</span>
+          <span>Складне — варто переглянути формулювання або еталонну відповідь</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-4">
+      <div class="help-card-label">{% if get_lang() == 'en' %}Key references{% else %}Ключові джерела{% endif %}</div>
+      <ul class="help-refs">
+        <li>Bloom, B. S. (Ed.). (1956). <em>Taxonomy of educational objectives: Handbook I. Cognitive domain.</em> David McKay.</li>
+        <li>Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A taxonomy for learning, teaching, and assessing.</em> Longman.</li>
+        <li>Sweller, J. (1988). Cognitive load during problem solving: Effects on learning. <em>Cognitive Science, 12</em>(2), 257–285.</li>
+        <li>Miller, G. E. (1990). The assessment of clinical skills/competence/performance. <em>Academic Medicine, 65</em>(9 Suppl), S63–S67.</li>
+        <li>Case, S. M., &amp; Swanson, D. B. (2002). <em>Constructing written test questions for the basic and clinical sciences</em> (3rd ed.). NBME.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  {# ══════════════════════════════════════════════════════════ #}
+  {# SECTION: MODULE / TOPICS                                  #}
+  {# ══════════════════════════════════════════════════════════ #}
+  <div class="help-section d-none" id="sec-module">
+
+    <div class="help-hero fade-up fade-up-2">
+      <div class="help-hero-icon"><i class="bi bi-folder2-open"></i></div>
+      <div>
+        {% if get_lang() == 'en' %}
+        <h4>Module, topics, and ILOs</h4>
+        <p>Hierarchical structure of learning content, item pool health, and constructive alignment theory.</p>
+        {% else %}
+        <h4>Модуль, теми та ОРН</h4>
+        <p>Ієрархічна структура навчального змісту, стан банку питань і теорія конструктивного узгодження.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="help-card fade-up fade-up-2">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Content hierarchy</div>
+      <p>The bank is organised into four levels matching the curriculum:</p>
+      <div class="help-hierarchy">
+        <div class="hh-level"><i class="bi bi-building"></i> Programme</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-book"></i> Discipline</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-collection"></i> Module</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-file-text"></i> Topic → ILO → Question</div>
+      </div>
+      <p style="margin-top:12px">Each topic has a <strong>weight coefficient</strong> (hours) that determines its share in the specification table when generating a test.</p>
+      {% else %}
+      <div class="help-card-label">Ієрархія контенту</div>
+      <p>Банк організовано у чотири рівні, що відповідають навчальному плану:</p>
+      <div class="help-hierarchy">
+        <div class="hh-level"><i class="bi bi-building"></i> Освітня програма</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-book"></i> Дисципліна</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-collection"></i> Модуль</div>
+        <div class="hh-arrow">↓</div>
+        <div class="hh-level"><i class="bi bi-file-text"></i> Тема → ОРН → Питання</div>
+      </div>
+      <p style="margin-top:12px">Кожна тема має <strong>ваговий коефіцієнт</strong> (кількість годин), що визначає її частку у специфікаційній таблиці.</p>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Item pool health</div>
+      <p>The table on the module page shows for each topic the number of <span class="badge bg-success keep">active</span> questions per difficulty tier B / M / H. Colour indicators signal:</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="pool-count good" style="min-width:32px;text-align:center">5</span>
+          <span>Sufficient — multiple variants can be generated without repetition</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="pool-count warn" style="min-width:32px;text-align:center">2</span>
+          <span>Low — questions will repeat across variants</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="pool-count crit" style="min-width:32px;text-align:center">0</span>
+          <span>Critical — this tier cannot be represented in the test</span>
+        </div>
+      </div>
+      <div class="help-tip">
+        <i class="bi bi-lightbulb me-2"></i>
+        Recommended minimum to generate 3 variants: <strong>three times</strong> as many questions per tier as needed in a single test.
+      </div>
+      {% else %}
+      <div class="help-card-label">Стан банку питань (pool health)</div>
+      <p>Таблиця на сторінці модуля показує для кожної теми кількість <span class="badge bg-success keep">активних</span> питань за рівнями Б / С / В.</p>
+      <div class="help-diff-table">
+        <div class="help-diff-row">
+          <span class="pool-count good" style="min-width:32px;text-align:center">5</span>
+          <span>Достатньо — можна проводити кілька варіантів без повторів</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="pool-count warn" style="min-width:32px;text-align:center">2</span>
+          <span>Мало — питання будуть повторюватись у різних варіантах</span>
+        </div>
+        <div class="help-diff-row">
+          <span class="pool-count crit" style="min-width:32px;text-align:center">0</span>
+          <span>Критично — цей рівень не може бути представлений у тесті</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      {% if get_lang() == 'en' %}
+      <div class="help-card-label">Topic ILOs (Intended Learning Outcomes)</div>
+      <p>On the topic page you can define a list of <strong>ILOs</strong> — the specific knowledge and skills students should master after studying the topic. They serve two purposes:</p>
+      <ol>
+        <li>When authoring questions, each question is linked to a specific ILO, ensuring content validity.</li>
+        <li>When analysing a test, the system shows which ILOs are covered by questions and which are not.</li>
+      </ol>
+      {% else %}
+      <div class="help-card-label">Очікувані результати навчання теми (ОРН)</div>
+      <p>На сторінці теми можна визначити перелік <strong>ОРН</strong> — конкретних знань і вмінь, якими студент має оволодіти. Вони слугують двом цілям:</p>
+      <ol>
+        <li>При написанні питань автор прив'язує кожне питання до конкретного ОРН.</li>
+        <li>При аналізі тесту система показує, які ОРН покриті питаннями, а які — ні.</li>
+      </ol>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-3">
+      <div class="help-card-label"><i class="bi bi-mortarboard me-2"></i>
+        {% if get_lang() == 'en' %}Constructive alignment and writing ILOs{% else %}Конструктивне узгодження та формулювання ОРН{% endif %}
+      </div>
+      {% if get_lang() == 'en' %}
+      <p>Constructive alignment (<em>Biggs, 1999</em>) states that a quality curriculum is a system of three interconnected components: intended learning outcomes (ILOs), teaching and learning activities (TLAs), and assessment tasks (ATs). If the ILO requires a student to "interpret microbiological test results in a clinical context" but questions only ask them to "list the characteristics of the pathogen", the system is internally misaligned.</p>
+      <p>SMART criteria adapted for ILO writing provide an operational quality-check tool. <strong>Specific</strong> — one ILO measures one construct. <strong>Measurable</strong> — achieved through a verb describing an observable action: "explain", "compare", "calculate", "justify" — rather than unobservable "know", "understand", "be familiar with". <strong>Achievable</strong> — alignment between the ILO's ambition and available study time. <strong>Relevant</strong> — mapped to a competency framework. <strong>Time-bound</strong> — fixed within a specific topic (<em>Kennedy et al., 2006</em>).</p>
+      <p>The specification table (test blueprint) — a content × cognitive-level matrix — converts constructive alignment from a declarative principle into a quantitatively verifiable procedure (<em>NBME, 2020</em>). The topic weight coefficient ensures <strong>proportional representation</strong>: a topic worth 4 hours receives twice as many questions in the test as a topic worth 2 hours.</p>
+      {% else %}
+      <p>Конструктивне узгодження (<em>Biggs, 1999</em>): ОРН, навчальна діяльність і оцінювання мають утворювати єдину систему. SMART-критерії для ОРН: <strong>Specific</strong> — один ОРН вимірює один конструкт; <strong>Measurable</strong> — вимірюваний дієслово («пояснити», «порівняти», але не «знати», «розуміти»); <strong>Achievable</strong>; <strong>Relevant</strong>; <strong>Time-bound</strong> (<em>Kennedy et al., 2006</em>).</p>
+      <p>Специфікаційна таблиця (test blueprint) перетворює конструктивне узгодження на кількісно верифіковану процедуру (<em>NBME, 2020</em>). Ваговий коефіцієнт теми забезпечує <strong>пропорційне представлення</strong>.</p>
+      {% endif %}
+    </div>
+
+    <div class="help-card fade-up fade-up-4">
+      <div class="help-card-label">{% if get_lang() == 'en' %}Key references{% else %}Ключові джерела{% endif %}</div>
+      <ul class="help-refs">
+        <li>Biggs, J. (1999). <em>Teaching for quality learning at university.</em> Open University Press / SRHE.</li>
+        <li>Kennedy, D., Hyland, Á., &amp; Ryan, N. (2006). <em>Writing and using learning outcomes: A practical guide.</em> University College Cork.</li>
+        <li>Moon, J. (2002). <em>The module and programme development handbook.</em> Kogan Page.</li>
+        <li>NBME. (2020). <em>Constructing written test questions for the basic and clinical sciences</em> (4th ed.).</li>
+        <li>Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. <em>Psychometrika, 16</em>(3), 297–334.</li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('#helpTabs .nav-link').forEach(tab => {
+    tab.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('#helpTabs .nav-link').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.help-section').forEach(s => s.classList.add('d-none'));
+      tab.classList.add('active');
+      document.getElementById('sec-' + tab.dataset.section).classList.remove('d-none');
+    });
+  });
+</script>
+{% endblock %}

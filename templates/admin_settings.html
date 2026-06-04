@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin_settings_title') }}{% endblock %}
+{% block content %}
+
+<div style="max-width:680px">
+  <div class="page-header fade-up">
+    <div>
+      <h2>{{ t('admin_settings_title') }}</h2>
+    </div>
+  </div>
+
+  {% if request.query_params.get('saved') %}
+  <div class="alert alert-success fade-up fade-up-1">
+    <i class="bi bi-check-circle me-2"></i>{{ t('btn_save') }}.
+  </div>
+  {% endif %}
+
+  {% set is_en = get_lang() == 'en' %}
+
+  {# ── Organisation branding ─────────────────────────────────── #}
+  <h6 class="mb-2 fade-up fade-up-1"
+      style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+    {{ t('org_settings_heading') }}
+  </h6>
+  <form method="post" action="/admin/org-settings" class="mb-4">
+    {% for key, meta in org_schema.items() %}
+    <div class="setting-card fade-up" style="animation-delay: {{ loop.index * 0.04 }}s">
+      <div class="mb-2">
+        <div class="setting-label">{{ meta.label_en if is_en else meta.label }}</div>
+        <div class="setting-hint">{{ meta.hint_en if is_en else meta.hint }}</div>
+      </div>
+      <input type="text" name="{{ key }}" class="form-control"
+             value="{{ org_settings[key] }}"
+             placeholder="{{ meta.placeholder_uk if not is_en else meta.placeholder }}">
+    </div>
+    {% endfor %}
+    <div class="d-flex gap-2 mt-3 fade-up">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-floppy me-1"></i>{{ t('btn_save') }}
+      </button>
+    </div>
+  </form>
+
+  {# ── Voting thresholds ─────────────────────────────────────── #}
+  <h6 class="mb-2 fade-up"
+      style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+    {{ t('nav_vote') }}
+  </h6>
+  <form method="post" action="/admin/settings">
+    {% for key, meta in schema.items() %}
+    {% if key == 'pass_threshold_pct' %}
+    <h6 class="mt-4 mb-2 fade-up"
+        style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+      {{ t('ia_assessment_heading') }}
+    </h6>
+    {% endif %}
+    {% if key == 'exposure_horizon_n' %}
+    <h6 class="mt-4 mb-2 fade-up"
+        style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4)">
+      {{ t('ia_exposure') }}
+    </h6>
+    {% endif %}
+    <div class="setting-card fade-up" style="animation-delay: {{ loop.index * 0.05 }}s">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="setting-label">{{ meta.label_en if is_en else meta.label }}</div>
+          <div class="setting-hint">{{ meta.hint_en if is_en else meta.hint }}</div>
+        </div>
+        <span style="font-size:.72rem;color:var(--text-4);white-space:nowrap;margin-left:16px">
+          default: {{ meta.default }} {{ meta.unit_en if is_en else meta.unit }}
+        </span>
+      </div>
+
+      {% if meta.type == 'pct' %}
+      <div class="setting-control">
+        <input type="range" class="form-range flex-grow-1"
+               id="{{ key }}_range" min="{{ meta.min }}" max="{{ meta.max }}"
+               value="{{ settings[key] }}"
+               oninput="document.getElementById('{{ key }}').value = this.value">
+        <div class="input-group" style="width:110px;flex-shrink:0">
+          <input type="number" class="form-control form-control-sm text-center"
+                 id="{{ key }}" name="{{ key }}"
+                 min="{{ meta.min }}" max="{{ meta.max }}" value="{{ settings[key] }}"
+                 oninput="document.getElementById('{{ key }}_range').value = this.value">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="setting-control">
+        <div class="input-group" style="width:160px">
+          <input type="number" class="form-control" id="{{ key }}" name="{{ key }}"
+                 min="{{ meta.min }}" max="{{ meta.max }}" value="{{ settings[key] }}">
+          <span class="input-group-text">{{ meta.unit_en if is_en else meta.unit }}</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="d-flex gap-2 mt-3 fade-up">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-floppy me-1"></i>{{ t('btn_save') }}
+      </button>
+      <a href="/" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

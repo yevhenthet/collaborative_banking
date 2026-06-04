@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block title %}{{ t('vq_title') }}{% endblock %}
+{% block content %}
+
+<div class="page-header fade-up">
+  <div>
+    <h2>{{ t('vq_title') }}</h2>
+    {% if to_vote %}
+    <div class="subtitle">{{ to_vote | length }} {{ t('vq_waiting') }}</div>
+    {% else %}
+    <div class="subtitle">{{ t('vq_all_done') }}</div>
+    {% endif %}
+  </div>
+  {% if to_vote %}
+  <button class="btn btn-sm btn-outline-secondary" id="guideToggleBtn"
+          onclick="toggleGuide()" style="align-self:flex-start;white-space:nowrap">
+    <i class="bi bi-info-circle me-1"></i>{{ t('vq_guide_toggle') }}
+  </button>
+  {% endif %}
+</div>
+
+{# ── Instruction panel ─────────────────────────────────────────── #}
+{% if to_vote %}
+<div id="vqGuide" class="fade-up" style="display:none;margin-bottom:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 24px">
+    <div>
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-4);margin-bottom:4px">
+        <i class="bi bi-list-check me-1"></i>{{ t('vq_guide_p1_title') }}
+      </div>
+      <div style="font-size:.82rem;color:var(--text-3);line-height:1.55">{{ t('vq_guide_p1_body') }}</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-4);margin-bottom:4px">
+        <i class="bi bi-bar-chart-steps me-1"></i>{{ t('vq_guide_p2_title') }}
+      </div>
+      <div style="font-size:.82rem;color:var(--text-3);line-height:1.55">{{ t('vq_guide_p2_body') }}</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-4);margin-bottom:4px">
+        <i class="bi bi-check2-circle me-1"></i>{{ t('vq_guide_p3_title') }}
+      </div>
+      <div style="font-size:.82rem;color:var(--text-3);line-height:1.55">{{ t('vq_guide_p3_body') }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Filter bar ────────────────────────────────────────────────── #}
+{% if to_vote and (filter_disciplines | length > 1) %}
+<div class="fade-up fade-up-1" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+  <i class="bi bi-funnel" style="color:var(--text-4);font-size:.85rem;flex-shrink:0"></i>
+  <select id="filterDisc" class="form-select form-select-sm" style="width:auto;min-width:180px;max-width:300px">
+    <option value="">{{ t('vq_filter_all') }} — {{ t('vq_filter_discipline') }}</option>
+    {% if multi_faculty %}
+      {% for faculty_name, group in filter_disciplines | groupby('faculty.name') %}
+      <optgroup label="{{ faculty_name }}">
+        {% for d in group %}
+        <option value="{{ d.id }}">{{ d.name }}</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    {% else %}
+      {% for d in filter_disciplines %}
+      <option value="{{ d.id }}">{{ d.name }}</option>
+      {% endfor %}
+    {% endif %}
+  </select>
+  <select id="filterTopic" class="form-select form-select-sm" style="width:auto;min-width:160px;max-width:280px">
+    <option value="">{{ t('vq_filter_all') }} — {{ t('vq_filter_topic') }}</option>
+    {% for item in filter_topics %}
+    <option value="{{ item.topic.id }}" data-disc="{{ item.discipline_id }}">
+      {{ item.topic.number }}. {{ item.topic.name }}
+    </option>
+    {% endfor %}
+  </select>
+  <span id="filterCount" style="font-size:.78rem;color:var(--text-4);white-space:nowrap"></span>
+  <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearFilters()" id="filterClearBtn" style="display:none">
+    <i class="bi bi-x me-1"></i>{{ t('vq_filter_all') }}
+  </button>
+</div>
+{% endif %}
+
+{% if not to_vote and not voted %}
+<div class="alert alert-success fade-up">
+  <i class="bi bi-check-circle me-2"></i> {{ t('vq_empty_alert') }}
+</div>
+{% endif %}
+
+{% set total_to_vote = to_vote | length %}
+
+{% for q in to_vote %}
+{% set cur_votes = q.votes | selectattr("round", "equalto", q.current_round) | list %}
+<div class="vote-card fade-up{% if loop.index <= 5 %} fade-up-{{ loop.index }}{% endif %}"
+     data-disc="{{ q.topic.module.discipline_id }}"
+     data-topic="{{ q.topic_id }}">
+
+  {# ── Header ── #}
+  <div class="vote-card-header">
+    <span class="vote-card-meta">
+      {{ q.topic.module.discipline.name }} ›
+      {{ t('bc_topic') }} {{ q.topic.number }}. {{ q.topic.name }}
+    </span>
+    <div class="d-flex gap-1 align-items-center flex-shrink-0">
+      <span class="badge bg-light text-dark border">
+        <i class="bi bi-people me-1"></i>{{ cur_votes | length }}/{{ quorum }}
+      </span>
+      {% if q.current_round > 1 %}
+      <span class="badge bg-warning">{{ t('q_round') }} {{ q.current_round }}</span>
+      {% endif %}
+      <a href="/questions/{{ q.id }}" class="btn btn-sm btn-outline-secondary py-0 px-2">
+        <i class="bi bi-box-arrow-up-right"></i>
+      </a>
+    </div>
+  </div>
+
+  {# ── Question body ── #}
+  <div class="vote-card-body">
+    <p class="vote-card-question">{{ q.text }}</p>
+
+    {% if q.model_answer %}
+    <div class="vote-card-answer">
+      <i class="bi bi-check-circle me-1"></i><strong>{{ t('q_model_answer') }}:</strong> {{ q.model_answer }}
+    </div>
+    {% endif %}
+
+    {% if q.learning_objective %}
+    <div class="vote-card-lo">
+      <i class="bi bi-bullseye me-1"></i><strong>{{ t('q_lo_label') }}:</strong> {{ q.learning_objective }}
+    </div>
+    {% endif %}
+
+    <div class="vote-card-props">
+      <span class="badge bg-light text-dark border">
+        {{ t('vq_proposed') }}: <strong>{{ diff_label(q.proposed_difficulty.value) }}</strong>
+      </span>
+      {% if q.question_type %}
+      <span class="badge bg-light text-dark border">{{ type_label(q.question_type.value) }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Form ── #}
+  <form method="post" action="/questions/{{ q.id }}/vote">
+    <input type="hidden" name="next_url" value="/vote">
+
+    {# ── Criteria grid ── #}
+    <div style="padding:12px 16px 14px;background:var(--surface-2);border-top:1px solid var(--border)">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4);margin-bottom:10px">{{ t('vote_criteria') }}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px">
+        {% for name, colors in [
+          ("crit_wording",  ["danger","secondary","success"]),
+          ("crit_lo",       ["danger","secondary","success"]),
+          ("crit_bloom",    ["warning","success","warning"]),
+          ("crit_answer",   ["danger","secondary","success"]),
+          ("crit_accuracy", ["danger","warning","success"]),
+        ] %}
+        {% set opts = crit_opts(name) %}
+        {% set anchors = crit_anchors(name) %}
+        <div class="crit-group" {% if loop.last %}style="grid-column:span 2"{% endif %}>
+          <div style="font-size:.72rem;color:var(--text-3);font-weight:500;margin-bottom:4px">{{ t(name) }}</div>
+          <div class="btn-group btn-group-sm w-100" role="group">
+            {% for i in [1,2,3] %}
+            <input type="radio" class="btn-check" name="{{ name }}"
+                   id="{{ name }}_{{ i }}_{{ q.id }}" value="{{ i }}" autocomplete="off"
+                   {% if i == 2 %}checked{% endif %}>
+            <label class="btn btn-outline-{{ colors[i-1] }}"
+                   for="{{ name }}_{{ i }}_{{ q.id }}"
+                   data-anchor="{{ anchors[i-1] }}">
+              {{ opts[i-1] }}
+            </label>
+            {% endfor %}
+          </div>
+          <div class="crit-anchor" style="font-size:.71rem;color:var(--text-4);margin-top:5px;line-height:1.45;min-height:2em;padding-left:2px;border-left:2px solid var(--border);transition:color .15s,border-color .15s">{{ anchors[1] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── Decision bar ── #}
+    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border)">
+      <input type="hidden" name="approve" value="yes">
+      <span class="decision-chip decision-chip-approve flex-shrink-0" data-decision
+            data-approve-text="{{ t('vote_approved') }}" data-reject-text="{{ t('vote_rejected') }}">
+        <i class="bi bi-hand-thumbs-up me-1"></i>{{ t('vote_approved') }}
+      </span>
+      <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+      <div class="diff-toggle flex-shrink-0" data-proposed="{{ q.proposed_difficulty.value }}">
+        {% for diff in difficulties %}
+        <input type="radio" name="difficulty_vote"
+               id="d{{ diff.value }}_{{ q.id }}" value="{{ diff.value }}"
+               {% if diff == q.proposed_difficulty %}checked{% endif %}>
+        <label for="d{{ diff.value }}_{{ q.id }}">{{ diff_label(diff.value) }}</label>
+        {% endfor %}
+      </div>
+      <span class="diff-bloom-hint" style="font-size:.7rem;display:none;white-space:nowrap;font-weight:600"></span>
+      <input type="text" name="comment" class="form-control form-control-sm"
+             placeholder="{{ t('vote_comment_placeholder') }}" style="flex:1;min-width:120px">
+      <button type="submit" class="btn btn-primary btn-sm flex-shrink-0">
+        <i class="bi bi-send me-1"></i>{{ t('vq_btn_vote') }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endfor %}
+
+{% if voted %}
+<h6 class="mt-4 mb-2" style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-4);">
+  {{ t('vq_voted_section') }} — {{ voted | length }}
+</h6>
+<div class="list-group">
+  {% for q in voted %}
+  {% set my_vote = namespace(v=none) %}
+  {% for v in q.votes %}{% if v.teacher_id == user.id %}{% set my_vote.v = v %}{% endif %}{% endfor %}
+  <a href="/questions/{{ q.id }}" class="list-group-item list-group-item-action py-2">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="me-3" style="min-width:0">
+        <div style="font-size:.72rem;color:var(--text-4);margin-bottom:2px;">
+          {{ t('bc_topic') }} {{ q.topic.number }}. {{ q.topic.name }}
+        </div>
+        <span style="font-size:.875rem;color:var(--text-3);">{{ q.text }}</span>
+      </div>
+      <div class="d-flex gap-1 align-items-center flex-shrink-0">
+        {% if my_vote.v %}
+          <span class="badge {{ 'bg-success keep' if my_vote.v.approve else 'bg-danger' }}">
+            {{ t('vote_approved') if my_vote.v.approve else t('vote_rejected') }}
+          </span>
+          <span class="badge bg-light text-dark border">
+            {{ diff_label(my_vote.v.difficulty_vote.value) }}
+          </span>
+        {% endif %}
+        {% set cur = q.votes | selectattr("round", "equalto", q.current_round) | list %}
+        <span class="badge bg-light text-dark border">
+          <i class="bi bi-chat-left-text"></i> {{ cur | length }}/{{ quorum }}
+        </span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+// ── Guide toggle ───────────────────────────────────────────────
+var GUIDE_KEY = 'vq_guide_open';
+function toggleGuide(){
+  var el = document.getElementById('vqGuide');
+  if(!el) return;
+  var open = el.style.display === 'none';
+  el.style.display = open ? '' : 'none';
+  try{ localStorage.setItem(GUIDE_KEY, open ? '1' : '0'); }catch(e){}
+}
+(function initGuide(){
+  var el = document.getElementById('vqGuide');
+  if(!el) return;
+  var stored = '';
+  try{ stored = localStorage.getItem(GUIDE_KEY); }catch(e){}
+  el.style.display = (stored === '1') ? '' : 'none';
+})();
+
+// ── Filter logic ───────────────────────────────────────────────
+{% if to_vote and (filter_disciplines | length > 1) %}
+var TXT_SHOWN = '{{ t("vq_filter_shown") }}';
+var TXT_OF    = '{{ t("vq_filter_of") }}';
+var TOTAL_Q   = {{ total_to_vote }};
+
+function applyFilter(){
+  var discVal  = document.getElementById('filterDisc').value;
+  var topicVal = document.getElementById('filterTopic').value;
+  var count = 0;
+  document.querySelectorAll('.vote-card[data-disc]').forEach(function(card){
+    var show = (!discVal  || card.dataset.disc  === discVal)
+            && (!topicVal || card.dataset.topic === topicVal);
+    card.style.display = show ? '' : 'none';
+    if(show) count++;
+  });
+  var countEl = document.getElementById('filterCount');
+  var clearBtn = document.getElementById('filterClearBtn');
+  if(discVal || topicVal){
+    countEl.textContent = TXT_SHOWN + ' ' + count + ' ' + TXT_OF + ' ' + TOTAL_Q;
+    if(clearBtn) clearBtn.style.display = '';
+  } else {
+    countEl.textContent = '';
+    if(clearBtn) clearBtn.style.display = 'none';
+  }
+}
+
+function updateTopicOptions(){
+  var discVal = document.getElementById('filterDisc').value;
+  var topicSel = document.getElementById('filterTopic');
+  var prevTopic = topicSel.value;
+  Array.from(topicSel.options).forEach(function(opt){
+    if(!opt.value){ opt.hidden = false; return; }
+    opt.hidden = !!(discVal && opt.dataset.disc !== discVal);
+  });
+  // Reset topic if it no longer belongs to selected disc
+  if(prevTopic && discVal){
+    var selOpt = topicSel.querySelector('option[value="'+prevTopic+'"]');
+    if(selOpt && selOpt.hidden) topicSel.value = '';
+  }
+}
+
+function clearFilters(){
+  document.getElementById('filterDisc').value = '';
+  document.getElementById('filterTopic').value = '';
+  updateTopicOptions();
+  applyFilter();
+}
+
+document.getElementById('filterDisc').addEventListener('change', function(){
+  updateTopicOptions();
+  applyFilter();
+});
+document.getElementById('filterTopic').addEventListener('change', applyFilter);
+{% endif %}
+
+(function(){
+  var ANCHOR_COLORS = {1:'var(--danger)',2:'var(--border)',3:'var(--success)'};
+  {% if get_lang() == 'en' %}
+  var TXT_BLOOM_DOWN='↓ Bloom: under-estimated';
+  var TXT_BLOOM_UP='↑ Bloom: over-estimated';
+  var TXT_MANUAL='↕ manual';
+  {% else %}
+  var TXT_BLOOM_DOWN='↓ Блум: занижений';
+  var TXT_BLOOM_UP='↑ Блум: завищений';
+  var TXT_MANUAL='↕ вручну';
+  {% endif %}
+  var DIFF_ORDER = ['B','M','H'];
+  var DIFF_COLORS = {
+    'B': {bg:'var(--diff-b-bg)',fg:'var(--diff-b-fg)'},
+    'M': {bg:'var(--diff-s-bg)',fg:'var(--diff-s-fg)'},
+    'H': {bg:'var(--diff-v-bg)',fg:'var(--diff-v-fg)'},
+  };
+
+  function bloomSuggest(bloom, proposed){
+    var i = DIFF_ORDER.indexOf(proposed);
+    if(bloom===1) i = Math.max(0, i-1);
+    else if(bloom===3) i = Math.min(2, i+1);
+    return DIFF_ORDER[i];
+  }
+
+  function updateDiffVisual(form){
+    var toggle=form.querySelector('.diff-toggle');
+    if(!toggle)return;
+    toggle.querySelectorAll('input[name="difficulty_vote"]').forEach(function(inp){
+      var lbl=toggle.querySelector('label[for="'+inp.id+'"]');
+      if(!lbl)return;
+      var c=inp.checked?DIFF_COLORS[inp.value]:null;
+      lbl.style.background=c?c.bg:'';
+      lbl.style.color=c?c.fg:'';
+    });
+  }
+
+  function updateAnchors(form){
+    form.querySelectorAll('.crit-group').forEach(function(grp){
+      var checked=grp.querySelector('.btn-check:checked');
+      var display=grp.querySelector('.crit-anchor');
+      if(!checked||!display)return;
+      var lbl=grp.querySelector('label[for="'+checked.id+'"]');
+      var text=lbl?lbl.dataset.anchor||'':'';
+      var val=parseInt(checked.value,10)||2;
+      display.textContent=text;
+      display.style.borderLeftColor=ANCHOR_COLORS[val]||'var(--border)';
+      display.style.color=val===1?'var(--danger)':val===3?'var(--success)':'var(--text-4)';
+    });
+  }
+
+  function updateDiffHint(form){
+    var bloomEl=form.querySelector('input[name="crit_bloom"]:checked');
+    var toggle=form.querySelector('.diff-toggle[data-proposed]');
+    var hint=form.querySelector('.diff-bloom-hint');
+    if(!bloomEl||!toggle||!hint)return;
+    var bloom=parseInt(bloomEl.value,10);
+    var proposed=toggle.dataset.proposed;
+    var suggested=bloomSuggest(bloom,proposed);
+    var currentEl=form.querySelector('input[name="difficulty_vote"]:checked');
+    var current=currentEl?currentEl.value:null;
+    var isOverride=toggle.dataset.override==='1';
+
+    if(bloom===2&&current===proposed){
+      hint.style.display='none';
+      return;
+    }
+    if(isOverride&&current!==suggested){
+      hint.textContent=TXT_MANUAL;
+      hint.style.color='var(--text-4)';
+      hint.style.display='';
+    } else if(bloom===1){
+      hint.textContent=TXT_BLOOM_DOWN;
+      hint.style.color='var(--danger)';
+      hint.style.display='';
+    } else if(bloom===3){
+      hint.textContent=TXT_BLOOM_UP;
+      hint.style.color='var(--success)';
+      hint.style.display='';
+    } else {
+      hint.style.display='none';
+    }
+  }
+
+  function updateDecision(form){
+    function get(name){
+      var el=form.querySelector('input[name="'+name+'"]:checked');
+      return el?parseInt(el.value,10):null;
+    }
+    var w=get('crit_wording'),lo=get('crit_lo'),bl=get('crit_bloom'),
+        ans=get('crit_answer'),acc=get('crit_accuracy');
+    if(w===null||lo===null||bl===null||ans===null||acc===null)return;
+    var ok=(w>=2&&lo>=2&&bl===2&&ans>=2&&acc>=2);
+    var hid=form.querySelector('input[name="approve"]');
+    var chip=form.querySelector('[data-decision]');
+    if(hid)hid.value=ok?'yes':'no';
+    if(chip){
+      var approveText=chip.dataset.approveText||'Approved';
+      var rejectText=chip.dataset.rejectText||'Rejected';
+      chip.className='decision-chip flex-shrink-0 '+(ok?'decision-chip-approve':'decision-chip-reject');
+      chip.innerHTML=ok
+        ?'<i class="bi bi-hand-thumbs-up me-1"></i>'+approveText
+        :'<i class="bi bi-hand-thumbs-down me-1"></i>'+rejectText;
+    }
+  }
+
+  document.querySelectorAll('.vote-card form').forEach(function(f){
+    f.addEventListener('change',function(e){
+      var toggle=f.querySelector('.diff-toggle[data-proposed]');
+      if(e.target&&e.target.name==='crit_bloom'&&toggle){
+        // Bloom changed: auto-apply suggestion, clear manual override
+        toggle.removeAttribute('data-override');
+        var bloom=parseInt(e.target.value,10);
+        var suggested=bloomSuggest(bloom,toggle.dataset.proposed);
+        var radio=f.querySelector('input[name="difficulty_vote"][value="'+suggested+'"]');
+        if(radio)radio.checked=true;
+      }
+      if(e.target&&e.target.name==='difficulty_vote'&&toggle){
+        // User manually picked difficulty
+        toggle.dataset.override='1';
+      }
+      updateDecision(f);
+      updateAnchors(f);
+      updateDiffHint(f);
+      updateDiffVisual(f);
+    });
+    updateDecision(f);
+    updateAnchors(f);
+    updateDiffHint(f);
+    updateDiffVisual(f);
+  });
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="{{ get_lang() }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('page_title_default') }}{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/static/app.css?v=11" rel="stylesheet">
+  <script>
+    (function(){
+      try {
+        var p = JSON.parse(localStorage.getItem('a11y') || '{}');
+        var cl = document.documentElement.classList;
+        cl.add('font-' + (p.font || 'm'));
+        if (p.contrast) cl.add('high-contrast');
+        if (p.motion === false) cl.add('reduce-motion');
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+{% if user is defined and user %}
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🧬</div>
+      <div>
+        <div class="sidebar-logo-text">{{ org_setting('org_name', t('app_name')) }}</div>
+        <div class="sidebar-logo-sub">{{ org_setting('org_dept', t('app_subtitle')) }}</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">{{ t('nav') }}</div>
+      <a href="/" class="sidebar-item">
+        <i class="bi bi-house"></i> {{ t('nav_home') }}
+      </a>
+      <a href="/bank" class="sidebar-item">
+        <i class="bi bi-journal-bookmark"></i> {{ t('nav_bank') }}
+      </a>
+      <a href="/vote" class="sidebar-item">
+        <i class="bi bi-check2-square"></i> {{ t('nav_vote') }}
+        <span class="sidebar-badge" id="nav-vote-badge">0</span>
+      </a>
+      <div class="sidebar-divider"></div>
+      <a href="/help" class="sidebar-item">
+        <i class="bi bi-mortarboard"></i> {{ t('nav_help') }}
+      </a>
+      {% if user.role.value == 'admin' %}
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">{{ t('nav_admin') }}</div>
+      <a href="/admin/teachers" class="sidebar-item">
+        <i class="bi bi-people"></i> {{ t('nav_teachers') }}
+      </a>
+      <a href="/admin/settings" class="sidebar-item">
+        <i class="bi bi-sliders"></i> {{ t('nav_settings') }}
+      </a>
+      <a href="/admin/export" class="sidebar-item">
+        <i class="bi bi-download"></i> {{ t('nav_export') }}
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-a11y">
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">{{ t('a11y') }}</div>
+      <div class="a11y-row">
+        <i class="bi bi-type a11y-icon"></i>
+        <div class="a11y-font-btns">
+          <button class="a11y-font-btn" data-font="s" title="{{ t('a11y_font_small') }}">A</button>
+          <button class="a11y-font-btn" data-font="m" title="{{ t('a11y_font_normal') }}">A</button>
+          <button class="a11y-font-btn" data-font="l" title="{{ t('a11y_font_large') }}">A</button>
+        </div>
+      </div>
+      <div class="a11y-row">
+        <i class="bi bi-circle-half a11y-icon"></i>
+        <span class="a11y-label">{{ t('a11y_contrast') }}</span>
+        <button class="a11y-switch" id="a11y-contrast" aria-label="{{ t('a11y_contrast') }}"></button>
+      </div>
+      <div class="a11y-row">
+        <i class="bi bi-lightning a11y-icon"></i>
+        <span class="a11y-label">{{ t('a11y_motion') }}</span>
+        <button class="a11y-switch" id="a11y-motion" aria-label="{{ t('a11y_motion') }}"></button>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="lang-toggle">
+        {% set cur_lang = get_lang() %}
+        <a href="/set-lang/uk" class="lang-btn {% if cur_lang == 'uk' %}active{% endif %}">УКР</a>
+        <a href="/set-lang/en" class="lang-btn {% if cur_lang == 'en' %}active{% endif %}">ENG</a>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-chip">
+        <div class="sidebar-avatar">{{ user.name[:2] | upper }}</div>
+        <div style="min-width:0;flex:1">
+          <div class="sidebar-user-name">{{ user.name }}</div>
+          <div class="sidebar-user-role">{{ t('role_admin') if user.role.value == 'admin' else t('role_teacher') }}</div>
+        </div>
+        <a href="/profile/password" class="sidebar-logout" title="{{ t('btn_change_password') }}">
+          <i class="bi bi-key"></i>
+        </a>
+        <form method="post" action="/logout" class="m-0">
+          <button type="submit" class="sidebar-logout" title="{{ t('btn_logout') }}">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger" type="button" aria-label="{{ t('menu') }}">
+        <i class="bi bi-list"></i>
+      </button>
+      {% block topbar %}{% endblock %}
+    </div>
+    <main class="main-content">
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if user is defined and user %}
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const ham     = document.getElementById('hamburger');
+  const openSb  = () => { sidebar.classList.add('open'); overlay.classList.add('open'); };
+  const closeSb = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+  ham.addEventListener('click', () => sidebar.classList.contains('open') ? closeSb() : openSb());
+  overlay.addEventListener('click', closeSb);
+
+  // Mark active nav — most specific match wins
+  const p = window.location.pathname;
+  const navItems = [...document.querySelectorAll('.sidebar-item[href]')]
+    .sort((a, b) => b.getAttribute('href').length - a.getAttribute('href').length);
+  for (const el of navItems) {
+    const h = el.getAttribute('href');
+    if (h === '/' ? p === '/' : p.startsWith(h)) { el.classList.add('active'); break; }
+  }
+
+  // Vote count badge
+  fetch('/vote/count').then(r => r.json()).then(d => {
+    if (d.count > 0) {
+      const b = document.getElementById('nav-vote-badge');
+      b.textContent = d.count;
+      b.classList.add('show');
+    }
+  }).catch(() => {});
+
+  // ── Accessibility panel ──
+  (function() {
+    let prefs = {};
+    try { prefs = JSON.parse(localStorage.getItem('a11y') || '{}'); } catch(e) {}
+    if (!prefs.font) prefs.font = 'm';
+    if (prefs.motion === undefined) prefs.motion = true;
+
+    function apply() {
+      const cl = document.documentElement.classList;
+      cl.remove('font-s', 'font-m', 'font-l');
+      cl.add('font-' + prefs.font);
+      cl.toggle('high-contrast', !!prefs.contrast);
+      cl.toggle('reduce-motion', !prefs.motion);
+      document.querySelectorAll('[data-font]').forEach(b =>
+        b.classList.toggle('active', b.dataset.font === prefs.font));
+      document.getElementById('a11y-contrast')?.classList.toggle('on', !!prefs.contrast);
+      document.getElementById('a11y-motion')?.classList.toggle('on', !!prefs.motion);
+    }
+
+    function save() { localStorage.setItem('a11y', JSON.stringify(prefs)); apply(); }
+
+    document.querySelectorAll('[data-font]').forEach(b =>
+      b.addEventListener('click', () => { prefs.font = b.dataset.font; save(); }));
+    document.getElementById('a11y-contrast')?.addEventListener('click', () => {
+      prefs.contrast = !prefs.contrast; save();
+    });
+    document.getElementById('a11y-motion')?.addEventListener('click', () => {
+      prefs.motion = !prefs.motion; save();
+    });
+
+    apply();
+  })();
+</script>
+{% else %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endif %}
+</body>
+</html>

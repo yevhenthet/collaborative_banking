@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ t('export_title') }} — {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header fade-up">
+  <div>
+    <h2>{{ t('export_title') }}</h2>
+    <div class="subtitle">{{ t('export_subtitle') }}</div>
+  </div>
+</div>
+
+<div class="fade-up fade-up-1" style="display:flex; flex-direction:column; gap:14px; max-width:760px">
+
+  {# ── Questions & empirical metrics ── #}
+  <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:var(--surface)">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:12px">
+      <i class="bi bi-journal-text" style="font-size:1.2rem; color:var(--accent); margin-top:2px; flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-weight:700; font-size:14px">{{ t('export_q_title') }}</div>
+        <div style="font-size:12px; color:var(--text-4); margin-top:4px; line-height:1.75">
+          {{ t('export_q_desc') }}<br>
+          {{ t('export_q_metric_p') }} (<code>cached_p</code>) ·
+          {{ t('export_q_metric_n') }} (<code>cached_n_tested</code>) ·
+          {{ t('export_q_metric_d') }} (<code>cached_d</code>) ·
+          {{ t('export_q_metric_rec') }} (<code>cached_rec</code>: {{ t('export_q_rec_values') }}).
+          <span style="font-weight:600; color:var(--text-3)">{{ q_total }} {{ t('export_rows') }}.</span>
+        </div>
+      </div>
+      <a href="/admin/export/questions" class="btn btn-primary btn-sm" style="white-space:nowrap; flex-shrink:0">
+        <i class="bi bi-download me-1"></i> questions.csv
+      </a>
+    </div>
+    <div style="padding:10px 20px 12px; background:var(--surface-2); font-size:11px; color:var(--text-4); font-family:monospace; line-height:2">
+      <span title="{{ t('export_q_col_id') }}">question_id</span> ·
+      <span title="{{ t('export_q_col_status') }}">status</span> ·
+      <span title="{{ t('export_q_col_author') }}">author</span> ·
+      <span title="{{ t('export_q_col_programme') }}">programme</span> ·
+      <span title="{{ t('export_q_col_discipline') }}">discipline</span> ·
+      <span title="{{ t('export_q_col_module') }}">module</span> ·
+      <span title="{{ t('export_q_col_topic') }}">topic</span> ·
+      <span title="{{ t('export_q_col_ilo_text') }}">ilo_text</span> ·
+      <span title="{{ t('export_q_col_ilo_bloom') }}">ilo_bloom_level</span> ·
+      <span title="{{ t('export_q_col_prop_diff') }}">proposed_difficulty</span> ·
+      <span title="{{ t('export_q_col_final_diff') }}">final_difficulty</span> ·
+      <span title="{{ t('export_q_col_type') }}">question_type</span> ·
+      <span title="{{ t('export_q_col_round') }}">current_round</span> ·
+      <span title="{{ t('export_q_col_created') }}">created_at</span> ·
+      <span title="{{ t('export_q_col_cached_p') }}" style="font-weight:700; color:var(--text-2)">cached_p</span> ·
+      <span title="{{ t('export_q_col_cached_n') }}" style="font-weight:700; color:var(--text-2)">cached_n_tested</span> ·
+      <span title="{{ t('export_q_col_cached_d') }}" style="font-weight:700; color:var(--text-2)">cached_d</span> ·
+      <span title="{{ t('export_q_col_cached_rec') }}" style="font-weight:700; color:var(--text-2)">cached_rec</span> ·
+      <span title="{{ t('export_q_col_text') }}">text</span>
+    </div>
+  </div>
+
+  {# ── Vote round summaries ── #}
+  <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:var(--surface)">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:12px">
+      <i class="bi bi-layers" style="font-size:1.2rem; color:#8b5cf6; margin-top:2px; flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-weight:700; font-size:14px">{{ t('export_vr_title') }}</div>
+        <div style="font-size:12px; color:var(--text-4); margin-top:4px; line-height:1.75">
+          {{ t('export_vr_desc') }}<br>
+          {{ t('export_vr_metric_outcome') }} (<code>outcome</code>: {{ t('export_vr_outcome_values') }}) ·
+          {{ t('export_vr_metric_apct') }} (<code>approval_pct</code>) ·
+          {{ t('export_vr_metric_means') }} (<code>mean_wording</code> … <code>mean_accuracy</code>) ·
+          {{ t('export_vr_metric_sds') }} (<code>sd_wording</code> … <code>sd_accuracy</code>) ·
+          {{ t('export_vr_metric_diff') }} (<code>diff_consensus_pct</code>).
+          <span style="font-weight:600; color:var(--text-3)">{{ rs_total }} {{ t('export_rows') }}.</span>
+        </div>
+      </div>
+      <a href="/admin/export/vote-rounds" class="btn btn-sm" style="background:#8b5cf6;color:#fff;border:none;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-download me-1"></i> vote_rounds.csv
+      </a>
+    </div>
+    <div style="padding:10px 20px 12px; background:var(--surface-2); font-size:11px; color:var(--text-4); font-family:monospace; line-height:2">
+      <span title="{{ t('export_vr_col_qid') }}">question_id</span> ·
+      <span title="{{ t('export_vr_col_round') }}">round</span> ·
+      <span title="{{ t('export_vr_col_outcome') }}" style="font-weight:700; color:var(--text-2)">outcome</span> ·
+      <span title="{{ t('export_vr_col_nvotes') }}">n_votes</span> ·
+      <span title="{{ t('export_vr_col_apct') }}" style="font-weight:700; color:var(--text-2)">approval_pct</span> ·
+      <span title="{{ t('export_vr_col_mean_w') }}" style="font-weight:700; color:var(--text-2)">mean_wording</span> ·
+      <span title="{{ t('export_vr_col_sd_w') }}" style="font-weight:700; color:var(--text-2)">sd_wording</span> ·
+      <span title="{{ t('export_vr_col_mean_lo') }}" style="font-weight:700; color:var(--text-2)">mean_lo</span> ·
+      <span title="{{ t('export_vr_col_sd_lo') }}" style="font-weight:700; color:var(--text-2)">sd_lo</span> ·
+      <span title="{{ t('export_vr_col_mean_bl') }}" style="font-weight:700; color:var(--text-2)">mean_bloom</span> ·
+      <span title="{{ t('export_vr_col_sd_bl') }}" style="font-weight:700; color:var(--text-2)">sd_bloom</span> ·
+      <span title="{{ t('export_vr_col_mean_an') }}" style="font-weight:700; color:var(--text-2)">mean_answer</span> ·
+      <span title="{{ t('export_vr_col_sd_an') }}" style="font-weight:700; color:var(--text-2)">sd_answer</span> ·
+      <span title="{{ t('export_vr_col_mean_ac') }}" style="font-weight:700; color:var(--text-2)">mean_accuracy</span> ·
+      <span title="{{ t('export_vr_col_sd_ac') }}" style="font-weight:700; color:var(--text-2)">sd_accuracy</span> ·
+      <span title="{{ t('export_vr_col_diff_cons') }}" style="font-weight:700; color:var(--text-2)">diff_consensus_pct</span> ·
+      <span title="{{ t('export_vr_col_closed') }}">closed_at</span>
+    </div>
+  </div>
+
+  {# ── Test results & item analysis ── #}
+  <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:var(--surface)">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:12px">
+      <i class="bi bi-bar-chart-line" style="font-size:1.2rem; color:#22c55e; margin-top:2px; flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-weight:700; font-size:14px">{{ t('export_tr_title') }}</div>
+        <div style="font-size:12px; color:var(--text-4); margin-top:4px; line-height:1.75">
+          {{ t('export_tr_desc') }}<br>
+          {{ t('export_tr_metric_fp') }} (<code>facility_p</code> = {{ t('export_tr_metric_fp_formula') }}) ·
+          {{ t('export_tr_metric_d') }} (<code>ebel_d</code> = {{ t('export_tr_metric_d_formula') }}) ·
+          {{ t('export_tr_metric_kr20') }} (<code>test_kr20</code>) ·
+          {{ t('export_tr_metric_epr') }} (<code>test_exp_pass_rate</code>).
+          <span style="font-weight:600; color:var(--text-3)">{{ tr_total }} {{ t('export_rows') }}.</span>
+        </div>
+      </div>
+      <a href="/admin/export/test-results" class="btn btn-sm" style="background:#16a34a;color:#fff;border:none;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-download me-1"></i> test_results.csv
+      </a>
+    </div>
+    <div style="padding:10px 20px 12px; background:var(--surface-2); font-size:11px; color:var(--text-4); font-family:monospace; line-height:2">
+      <span title="{{ t('export_tr_col_tid') }}">test_id</span> ·
+      <span title="{{ t('export_tr_col_tname') }}">test_name</span> ·
+      <span title="{{ t('export_tr_col_tdate') }}">test_date</span> ·
+      <span title="{{ t('export_tr_col_module') }}">module</span> ·
+      <span title="{{ t('export_tr_col_kr20') }}" style="font-weight:700; color:var(--text-2)">test_kr20</span> ·
+      <span title="{{ t('export_tr_col_epr') }}" style="font-weight:700; color:var(--text-2)">test_exp_pass_rate</span> ·
+      <span title="{{ t('export_tr_col_qid') }}">question_id</span> ·
+      <span title="{{ t('export_tr_col_diff') }}">difficulty</span> ·
+      <span title="{{ t('export_tr_col_ilo') }}">ilo_text</span> ·
+      <span title="{{ t('export_tr_col_correct') }}" style="font-weight:700; color:var(--text-2)">correct_count</span> ·
+      <span title="{{ t('export_tr_col_total') }}" style="font-weight:700; color:var(--text-2)">total_students</span> ·
+      <span title="{{ t('export_tr_col_fp') }}" style="font-weight:700; color:var(--text-2)">facility_p</span> ·
+      <span title="{{ t('export_tr_col_upper') }}">upper_correct</span> ·
+      <span title="{{ t('export_tr_col_lower') }}">lower_correct</span> ·
+      <span title="{{ t('export_tr_col_d') }}" style="font-weight:700; color:var(--text-2)">ebel_d</span>
+    </div>
+  </div>
+
+  {# ── Raw votes ── #}
+  <div style="border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; background:var(--surface)">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:12px">
+      <i class="bi bi-person-check" style="font-size:1.2rem; color:#f59e0b; margin-top:2px; flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-weight:700; font-size:14px">{{ t('export_rv_title') }}</div>
+        <div style="font-size:12px; color:var(--text-4); margin-top:4px; line-height:1.75">
+          {{ t('export_rv_desc') }}<br>
+          {{ t('export_rv_metric_reviewer') }} (<code>reviewer</code>) ·
+          {{ t('export_rv_metric_crits') }} (<code>crit_wording</code> … <code>crit_accuracy</code>, {{ t('export_rv_crit_scale') }}) ·
+          {{ t('export_rv_metric_approve') }} (<code>approve</code>: {{ t('export_rv_approve_values') }}) ·
+          {{ t('export_rv_metric_diff') }} (<code>difficulty_vote</code>).
+          <span style="font-weight:600; color:var(--text-3)">{{ v_total }} {{ t('export_rows') }}.</span>
+        </div>
+      </div>
+      <a href="/admin/export/votes-raw" class="btn btn-sm" style="background:#d97706;color:#fff;border:none;white-space:nowrap;flex-shrink:0">
+        <i class="bi bi-download me-1"></i> votes_raw.csv
+      </a>
+    </div>
+    <div style="padding:10px 20px 12px; background:var(--surface-2); font-size:11px; color:var(--text-4); font-family:monospace; line-height:2">
+      <span title="{{ t('export_rv_col_vid') }}">vote_id</span> ·
+      <span title="{{ t('export_rv_col_qid') }}">question_id</span> ·
+      <span title="{{ t('export_rv_col_reviewer') }}" style="font-weight:700; color:var(--text-2)">reviewer</span> ·
+      <span title="{{ t('export_rv_col_round') }}">round</span> ·
+      <span title="{{ t('export_rv_col_approve') }}" style="font-weight:700; color:var(--text-2)">approve</span> ·
+      <span title="{{ t('export_rv_col_diff') }}" style="font-weight:700; color:var(--text-2)">difficulty_vote</span> ·
+      <span title="{{ t('export_rv_col_crit_w') }}" style="font-weight:700; color:var(--text-2)">crit_wording</span> ·
+      <span title="{{ t('export_rv_col_crit_lo') }}" style="font-weight:700; color:var(--text-2)">crit_lo</span> ·
+      <span title="{{ t('export_rv_col_crit_bl') }}" style="font-weight:700; color:var(--text-2)">crit_bloom</span> ·
+      <span title="{{ t('export_rv_col_crit_an') }}" style="font-weight:700; color:var(--text-2)">crit_answer</span> ·
+      <span title="{{ t('export_rv_col_crit_ac') }}" style="font-weight:700; color:var(--text-2)">crit_accuracy</span> ·
+      <span title="{{ t('export_rv_col_comment') }}">comment</span> ·
+      <span title="{{ t('export_rv_col_created') }}">created_at</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="fade-up fade-up-2 mt-4" style="max-width:760px; padding:14px 18px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); font-size:12px; color:var(--text-4); line-height:1.7">
+  <i class="bi bi-info-circle me-2"></i>{{ t('export_note') }}
+</div>
+
+{% endblock %}

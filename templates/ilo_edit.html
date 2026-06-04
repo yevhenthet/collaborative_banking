@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ilo_edit_title') }}{% endblock %}
+{% block content %}
+<div style="max-width:680px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/topics/{{ lo.topic_id }}">{{ t('bc_topic') }} {{ lo.topic.number }}</a></li>
+      <li class="breadcrumb-item active">{{ t('ilo_edit_title') }}</li>
+    </ol>
+  </nav>
+
+  <div class="page-header fade-up fade-up-1">
+    <div>
+      <h2>{{ t('ilo_edit_title') }}</h2>
+      <div class="subtitle">{{ t('ilo_edit_note') }}</div>
+    </div>
+  </div>
+
+  <div class="card fade-up fade-up-2">
+    <div class="card-body">
+      <form method="post" action="/topics/{{ lo.topic_id }}/outcomes/{{ lo.id }}/edit">
+
+        <div class="mb-3">
+          <label class="form-label">{{ t('ilo_edit_text_label') }} *</label>
+          <textarea name="text" class="form-control" rows="3" required
+                    placeholder="{{ t('topic_ilo_placeholder') }}">{{ lo.text }}</textarea>
+          <div class="form-text">
+            <i class="bi bi-lightbulb me-1"></i>
+            {{ t('topic_ilo_hint_title') }} {{ t('topic_ilo_hint_body') }}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">{{ t('ilo_edit_bloom_label') }} <span class="text-muted fw-normal small">({{ t('ilo_edit_bloom_none') }})</span></label>
+          <div class="d-flex flex-column gap-2">
+            <div class="lo-bloom-card">
+              <input class="form-check-input visually-hidden" type="radio" name="bloom_level"
+                     id="bl_none" value=""
+                     {% if not lo.bloom_level %}checked{% endif %}>
+              <label class="d-block" for="bl_none" style="cursor:pointer;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-3)">
+                {{ t('ilo_edit_bloom_none') }}
+              </label>
+            </div>
+            {% for diff in difficulties %}
+            {% set bd = bloom_detail(diff.value) %}
+            <div class="lo-bloom-card">
+              <input class="form-check-input visually-hidden" type="radio" name="bloom_level"
+                     id="bl_{{ diff.value }}" value="{{ diff.value }}"
+                     {% if lo.bloom_level and lo.bloom_level.value == diff.value %}checked{% endif %}>
+              <label class="d-block bloom-card" for="bl_{{ diff.value }}" style="cursor:pointer">
+                <div class="bloom-header">
+                  <span class="{{ 'diff-b' if diff.value=='B' else ('diff-s' if diff.value=='M' else 'diff-v') }}">
+                    {{ diff_label(diff.value) }}
+                  </span>
+                  <span class="bloom-title">{{ bd.title }}</span>
+                </div>
+                <div class="bloom-verbs" style="font-size:.78rem"><i class="bi bi-cursor-text me-1"></i>{{ bd.verbs }}</div>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>{{ t('btn_save') }}
+          </button>
+          <a href="/topics/{{ lo.topic_id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

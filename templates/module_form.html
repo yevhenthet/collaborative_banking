@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ t('btn_save') if editing else t('btn_new_module') }}{% endblock %}
+{% block content %}
+<div style="max-width:560px">
+
+  <div class="page-header fade-up">
+    <div>
+      <h2>{{ t('btn_save') if editing else t('btn_new_module') }}</h2>
+      <div class="subtitle">{{ discipline.name }}</div>
+    </div>
+  </div>
+
+  <div class="card fade-up fade-up-1">
+    <div class="card-body">
+      <form method="post" action="{{ '/modules/' ~ module.id ~ '/edit' if editing else '/disciplines/' ~ discipline.id ~ '/modules' }}">
+        <div class="mb-3">
+          <label class="form-label">{{ t('form_number') }} *</label>
+          <input type="number" name="number" class="form-control" required min="1"
+                 value="{{ module.number if editing else next_number }}" style="width:140px">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{{ t('form_name') }} *</label>
+          <input type="text" name="name" class="form-control" required
+                 value="{{ module.name if editing else '' }}">
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">{{ t('btn_save') if editing else t('btn_new_module') }}</button>
+          <a href="{{ '/modules/' ~ module.id if editing else '/disciplines/' ~ discipline.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

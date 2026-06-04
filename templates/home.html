@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_home') }} — {{ t('app_name') }}{% endblock %}
+
+{% block content %}
+<style>
+/* ── Home page styles ───────────────────────────────────── */
+.home-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.home-welcome-text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin: 0;
+}
+.home-welcome-text .home-date {
+  font-size: 12px;
+  color: var(--text-4);
+  margin-top: 3px;
+}
+
+/* Stats row */
+.home-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.home-stat {
+  flex: 1;
+  min-width: 140px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: background .15s, border-color .15s, transform .15s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.home-stat:hover {
+  background: var(--surface-3);
+  border-color: var(--border-2);
+  transform: translateY(-1px);
+  text-decoration: none;
+  color: inherit;
+}
+.home-stat-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.home-stat-body {}
+.home-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.home-stat-label {
+  font-size: 11px;
+  color: var(--text-4);
+  margin-top: 3px;
+}
+
+/* Roadmap panel */
+.roadmap-panel {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.roadmap-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.roadmap-header:hover { background: var(--surface-3); }
+.roadmap-header-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.roadmap-header-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+.roadmap-header-sub {
+  font-size: 11px;
+  color: var(--text-4);
+  margin-left: 4px;
+}
+.roadmap-toggle-arrow {
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--text-4);
+  transition: transform .25s;
+}
+.roadmap-toggle-arrow.open { transform: rotate(180deg); }
+.roadmap-hide-btn {
+  font-size: 11px;
+  color: var(--text-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+.roadmap-hide-btn:hover { color: var(--text-2); background: var(--surface-3); }
+
+.roadmap-body {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+/* Track card */
+.track-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface);
+}
+.track-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.track-card-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.track-card-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+.track-card-desc {
+  font-size: 11px;
+  color: var(--text-4);
+  margin-top: 1px;
+}
+
+.track-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.track-step {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.track-step-num {
+  min-width: 18px; height: 18px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-4);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.track-step-strong { font-weight: 600; color: var(--text); }
+.track-step-muted { color: var(--text-4); }
+
+.track-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 7px;
+  text-decoration: none;
+  transition: opacity .15s;
+  color: #fff;
+}
+.track-card-action:hover { opacity: .88; color: #fff; text-decoration: none; }
+
+/* Colour variants */
+.tc-blue  .track-card-icon { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
+.tc-blue  .track-card-action { background: var(--accent); }
+.tc-green .track-card-icon { background: rgba(34,197,94,.15); color: #22c55e; }
+.tc-green .track-card-action { background: #16a34a; }
+.tc-purple .track-card-icon { background: rgba(139,92,246,.15); color: #8b5cf6; }
+.tc-purple .track-card-action { background: #7c3aed; }
+.tc-amber .track-card-icon { background: rgba(245,158,11,.15); color: #f59e0b; }
+.tc-amber .track-card-action { background: #d97706; }
+
+/* Tool description hero */
+.home-hero {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  background: var(--surface);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.home-hero-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: grid; place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.home-hero-body { flex: 1; min-width: 0; }
+.home-hero-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  margin-bottom: 4px;
+}
+.home-hero-tagline {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.home-hero-desc {
+  font-size: 12px;
+  color: var(--text-4);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.home-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.home-hero-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+}
+</style>
+
+<!-- Welcome -->
+<div class="home-welcome fade-up">
+  <div class="home-welcome-text">
+    <h2>{{ t('home_welcome') }}, {{ user.name.split(' ')[0] }} 👋</h2>
+    <div class="home-date" id="homeDateStr"></div>
+  </div>
+  <a href="/bank" class="btn btn-sm" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600">
+    <i class="bi bi-journal-bookmark me-1"></i>{{ t('nav_bank') }}
+  </a>
+</div>
+
+<!-- Stats row -->
+<div class="home-stats fade-up fade-up-1">
+  <a href="/vote" class="home-stat {% if vote_count > 0 %}home-stat-alert{% endif %}">
+    <div class="home-stat-icon" style="background:rgba(var(--accent-rgb),.15); color:var(--accent)">
+      <i class="bi bi-check2-square"></i>
+    </div>
+    <div class="home-stat-body">
+      <div class="home-stat-value" style="color:{% if vote_count > 0 %}var(--accent){% else %}var(--text){% endif %}">{{ vote_count }}</div>
+      <div class="home-stat-label">{{ t('home_stat_votes') }}</div>
+    </div>
+  </a>
+  <div class="home-stat" style="cursor:default">
+    <div class="home-stat-icon" style="background:rgba(34,197,94,.15); color:#22c55e">
+      <i class="bi bi-journal-text"></i>
+    </div>
+    <div class="home-stat-body">
+      <div class="home-stat-value">
+        <span style="color:#22c55e">{{ my_active }}</span>
+        <span style="font-size:13px; font-weight:500; color:var(--text-4)"> / {{ my_total }}</span>
+      </div>
+      <div class="home-stat-label">{{ t('home_stat_my_q') }}</div>
+    </div>
+  </div>
+  <div class="home-stat" style="cursor:default">
+    <div class="home-stat-icon" style="background:rgba(245,158,11,.15); color:#f59e0b">
+      <i class="bi bi-database-check"></i>
+    </div>
+    <div class="home-stat-body">
+      <div class="home-stat-value" style="color:#f59e0b">{{ total_active }}</div>
+      <div class="home-stat-label">{{ t('home_stat_active') }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Roadmap panel -->
+<div class="roadmap-panel fade-up fade-up-2" id="roadmapPanel">
+  <div class="roadmap-header" id="roadmapToggle" role="button">
+    <div class="roadmap-header-icon"><i class="bi bi-map"></i></div>
+    <span class="roadmap-header-title">{{ t('home_guide_toggle') }}</span>
+    <span class="roadmap-header-sub">— покроковий путівник</span>
+    <i class="bi bi-chevron-down roadmap-toggle-arrow" id="roadmapArrow"></i>
+    <button class="roadmap-hide-btn" id="roadmapHideBtn" title="{{ t('home_guide_hide') }}">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  <div id="roadmapBody" class="roadmap-body">
+
+    <!-- Track 1: Getting Started -->
+    <div class="track-card tc-blue">
+      <div class="track-card-head">
+        <div class="track-card-icon"><span>🚀</span></div>
+        <div>
+          <div class="track-card-title">{{ t('home_track_start_title') }}</div>
+          <div class="track-card-desc">{{ t('home_track_start_desc') }}</div>
+        </div>
+      </div>
+      <div class="track-steps">
+        <div class="track-step">
+          <div class="track-step-num">1</div>
+          <div><span class="track-step-strong">{{ t('home_step_login') }}</span> — <span class="track-step-muted">{{ t('home_step_login_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">2</div>
+          <div><span class="track-step-strong">{{ t('home_step_browse') }}</span> — <span class="track-step-muted">{{ t('home_step_browse_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">3</div>
+          <div><span class="track-step-strong">{{ t('home_step_help') }}</span> — <span class="track-step-muted">{{ t('home_step_help_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">4</div>
+          <div><span class="track-step-strong">{{ t('home_step_first_q') }}</span> — <span class="track-step-muted">{{ t('home_step_first_q_d') }}</span></div>
+        </div>
+      </div>
+      <a href="/help" class="track-card-action"><i class="bi bi-mortarboard"></i> {{ t('home_action_help') }}</a>
+    </div>
+
+    <!-- Track 2: Weekly Cycle -->
+    <div class="track-card tc-green">
+      <div class="track-card-head">
+        <div class="track-card-icon"><span>🔄</span></div>
+        <div>
+          <div class="track-card-title">{{ t('home_track_cycle_title') }}</div>
+          <div class="track-card-desc">{{ t('home_track_cycle_desc') }}</div>
+        </div>
+      </div>
+      <div class="track-steps">
+        <div class="track-step">
+          <div class="track-step-num">1</div>
+          <div><span class="track-step-strong">{{ t('home_step_vote') }}</span> — <span class="track-step-muted">{{ t('home_step_vote_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">2</div>
+          <div><span class="track-step-strong">{{ t('home_step_add_q') }}</span> — <span class="track-step-muted">{{ t('home_step_add_q_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">3</div>
+          <div><span class="track-step-strong">{{ t('home_step_review') }}</span> — <span class="track-step-muted">{{ t('home_step_review_d') }}</span></div>
+        </div>
+      </div>
+      <a href="/vote" class="track-card-action">
+        <i class="bi bi-check2-square"></i> {{ t('home_action_vote') }}
+        {% if vote_count > 0 %}<span style="background:rgba(255,255,255,.25);border-radius:10px;padding:0 6px;margin-left:2px">{{ vote_count }}</span>{% endif %}
+      </a>
+    </div>
+
+    <!-- Track 3: Test Generation -->
+    <div class="track-card tc-purple">
+      <div class="track-card-head">
+        <div class="track-card-icon"><span>📄</span></div>
+        <div>
+          <div class="track-card-title">{{ t('home_track_tests_title') }}</div>
+          <div class="track-card-desc">{{ t('home_track_tests_desc') }}</div>
+        </div>
+      </div>
+      <div class="track-steps">
+        <div class="track-step">
+          <div class="track-step-num">А</div>
+          <div><span class="track-step-strong">{{ t('home_step_summative') }}</span> — <span class="track-step-muted">{{ t('home_step_summative_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">Б</div>
+          <div><span class="track-step-strong">{{ t('home_step_quiz') }}</span> — <span class="track-step-muted">{{ t('home_step_quiz_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">3</div>
+          <div><span class="track-step-strong">{{ t('home_step_results') }}</span> — <span class="track-step-muted">{{ t('home_step_results_d') }}</span></div>
+        </div>
+      </div>
+      <a href="/tests/new" class="track-card-action"><i class="bi bi-file-earmark-plus"></i> {{ t('home_action_test') }}</a>
+    </div>
+
+    <!-- Track 4: Admin (always visible — useful context even for teachers) -->
+    <div class="track-card tc-amber">
+      <div class="track-card-head">
+        <div class="track-card-icon"><span>⚙️</span></div>
+        <div>
+          <div class="track-card-title">{{ t('home_track_admin_title') }}</div>
+          <div class="track-card-desc">{{ t('home_track_admin_desc') }}</div>
+        </div>
+      </div>
+      <div class="track-steps">
+        <div class="track-step">
+          <div class="track-step-num">1</div>
+          <div><span class="track-step-strong">{{ t('home_step_teachers') }}</span> — <span class="track-step-muted">{{ t('home_step_teachers_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">2</div>
+          <div><span class="track-step-strong">{{ t('home_step_structure') }}</span> — <span class="track-step-muted">{{ t('home_step_structure_d') }}</span></div>
+        </div>
+        <div class="track-step">
+          <div class="track-step-num">3</div>
+          <div><span class="track-step-strong">{{ t('home_step_settings') }}</span> — <span class="track-step-muted">{{ t('home_step_settings_d') }}</span></div>
+        </div>
+      </div>
+      {% if user.role.value == 'admin' %}
+      <a href="/admin/teachers" class="track-card-action"><i class="bi bi-people"></i> {{ t('home_action_teachers') }}</a>
+      {% else %}
+      <a href="/admin/settings" class="track-card-action" style="background:var(--surface-3);color:var(--text-4);pointer-events:none;opacity:.5">
+        <i class="bi bi-lock"></i> {{ t('role_admin') }}
+      </a>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Tool description -->
+<div class="home-hero fade-up fade-up-3">
+  <div class="home-hero-icon">🧬</div>
+  <div class="home-hero-body">
+    <div class="home-hero-name">{{ t('home_tool_name') }}</div>
+    <div class="home-hero-tagline">{{ t('home_tool_tagline') }}</div>
+    <div class="home-hero-desc">{{ t('home_tool_desc') }}</div>
+    <div class="home-hero-pills">
+      <span class="home-hero-pill">🗳 {{ t('home_pill_1') }}</span>
+      <span class="home-hero-pill">📄 {{ t('home_pill_2') }}</span>
+      <span class="home-hero-pill">📈 {{ t('home_pill_3') }}</span>
+      <span class="home-hero-pill">🎯 {{ t('home_pill_4') }}</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Date string
+  var d = new Date();
+  var days = ['неділя','понеділок','вівторок','середа','четвер','п\'ятниця','субота'];
+  var months = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+  var el = document.getElementById('homeDateStr');
+  if (el) el.textContent = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+
+  // Roadmap toggle + hide
+  var SHOWN_KEY = 'rm_shown';
+  var OPEN_KEY  = 'rm_open';
+  var panel  = document.getElementById('roadmapPanel');
+  var body   = document.getElementById('roadmapBody');
+  var arrow  = document.getElementById('roadmapArrow');
+  var toggle = document.getElementById('roadmapToggle');
+  var hideBtn = document.getElementById('roadmapHideBtn');
+
+  var shown = localStorage.getItem(SHOWN_KEY);
+  var open  = localStorage.getItem(OPEN_KEY);
+
+  // Default: open on first visit, closed after first "hide"
+  if (shown === 'hidden') {
+    panel.style.display = 'none';
+    return;
+  }
+  // Default open state: open (null = first visit)
+  var isOpen = (open === null) ? true : (open === '1');
+
+  function setOpen(v) {
+    isOpen = v;
+    body.style.display  = v ? '' : 'none';
+    arrow.classList.toggle('open', v);
+    localStorage.setItem(OPEN_KEY, v ? '1' : '0');
+  }
+
+  setOpen(isOpen);
+
+  toggle.addEventListener('click', function(e) {
+    if (e.target === hideBtn || hideBtn.contains(e.target)) return;
+    setOpen(!isOpen);
+  });
+
+  hideBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    panel.style.display = 'none';
+    localStorage.setItem(SHOWN_KEY, 'hidden');
+  });
+})();
+</script>
+{% endblock %}

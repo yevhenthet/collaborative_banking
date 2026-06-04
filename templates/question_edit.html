@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}{{ t('qf_edit_title') }}{% endblock %}
+{% block content %}
+<div style="max-width:860px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/topics/{{ question.topic_id }}">{{ t('bc_topic') }} {{ question.topic.number }}</a></li>
+      <li class="breadcrumb-item"><a href="/questions/{{ question.id }}">{{ t('bc_question') }} #{{ question.id }}</a></li>
+      <li class="breadcrumb-item active">{{ t('qf_edit_title') }}</li>
+    </ol>
+  </nav>
+
+  <div class="page-header fade-up fade-up-1">
+    <div>
+      <h2>{{ t('qf_edit_title') }}</h2>
+      <div class="subtitle">
+        {{ t('btn_submit_edit') }}
+      </div>
+    </div>
+  </div>
+
+  {% set show_reviewer_names = (user.role.value == 'admin') or (question.status.value == 'active') %}
+
+  {# ── Voting history — one panel per round, newest first ── #}
+  {% set crit_keys = ['crit_wording','crit_lo','crit_bloom','crit_answer','crit_accuracy'] %}
+  {% set all_rounds = question.votes | map(attribute='round') | unique | sort | list %}
+  {% for rnd in all_rounds | reverse %}
+  {% set rnd_votes = question.votes | selectattr("round", "equalto", rnd) | list %}
+  {% set is_current = (rnd == question.current_round) %}
+  <div class="card mb-3 fade-up fade-up-2"
+       style="border-color:{{ 'var(--amber)' if is_current else 'var(--border)' }}">
+
+    {# Header #}
+    <div class="card-header d-flex justify-content-between align-items-center"
+         style="{{ 'background:var(--amber-light);color:var(--amber-hover)' if is_current else 'background:var(--surface-2);color:var(--text-3)' }}"
+         {% if not is_current %}data-bs-toggle="collapse" data-bs-target="#round-{{ rnd }}-panel" style="cursor:pointer"{% endif %}>
+      <span>
+        <i class="bi bi-chat-left-quote me-1"></i>
+        {{ t('q_round') }} {{ rnd }}
+        {% if is_current %}
+        <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem">{{ t('status_pending') }}</span>
+        {% else %}
+        <span class="badge bg-secondary ms-1" style="font-size:.65rem">{{ t('status_retired') if false else t('vq_voted_section') }}</span>
+        {% endif %}
+      </span>
+      <span style="font-size:.72rem">{{ rnd_votes | length }} {{ t('vq_waiting') }}</span>
+    </div>
+
+    {# Collapsible body — past rounds start collapsed #}
+    <div {% if not is_current %}class="collapse" id="round-{{ rnd }}-panel"{% endif %}>
+
+      {# Aggregate criteria bar #}
+      {% set has_crits = rnd_votes | selectattr('crit_wording') | list | length > 0 %}
+      {% if has_crits %}
+      <div class="px-3 py-2" style="background:var(--surface-2);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center">
+          {% for ck in crit_keys %}
+          {% set scores = rnd_votes | map(attribute=ck) | select | list %}
+          {% set mean = (scores | sum) / (scores | length) if scores else none %}
+          {% if mean is not none %}
+          {% if ck == 'crit_bloom' %}
+            {% set col = 'var(--success)' if (mean >= 1.8 and mean <= 2.2) else 'var(--amber)' %}
+          {% else %}
+            {% set col = 'var(--success)' if mean >= 2.5 else ('var(--danger)' if mean < 1.7 else 'var(--text-2)') %}
+          {% endif %}
+          <div title="{{ t(ck) }}">
+            <div style="font-size:1.1rem;font-weight:700;line-height:1;color:{{ col }}">{{ mean | round(1) }}</div>
+            <div style="font-size:.6rem;color:var(--text-4);margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t(ck) }}</div>
+          </div>
+          {% else %}
+          <div style="font-size:.75rem;color:var(--text-4)">—</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Per-voter rows #}
+      <div class="card-body p-0">
+        {% for vote in rnd_votes %}
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;font-weight:600;color:var(--text-2);margin-bottom:2px">
+                {% if show_reviewer_names %}{{ vote.teacher.name }}{% else %}<span style="color:var(--text-4);font-style:italic">{{ t('vote_anonymous') }}</span>{% endif %}
+              </div>
+              <div style="font-size:.8rem;color:var(--text-3)">{{ vote.comment if vote.comment else '—' }}</div>
+              {% if vote.crit_wording %}
+              <div class="d-flex gap-1 flex-wrap mt-2">
+                {% for ck in crit_keys %}
+                {% set score = vote | attr(ck) %}
+                {% if score is not none %}
+                {% set anchors = crit_anchors(ck) %}
+                {% if ck == 'crit_bloom' %}
+                  {% set bcls = 'bg-success keep' if score == 2 else 'bg-warning text-dark' %}
+                {% else %}
+                  {% set bcls = 'bg-success keep' if score == 3 else ('bg-danger' if score == 1 else 'bg-secondary') %}
+                {% endif %}
+                <span class="badge {{ bcls }}"
+                      style="font-size:.67rem;font-weight:500;cursor:default"
+                      title="{{ t(ck) }}: {{ anchors[score - 1] }}">
+                  {{ t(ck) }}: {{ score }}/3
+                </span>
+                {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0 align-items-start pt-1">
+              <span class="badge {{ 'bg-success keep' if vote.approve else 'bg-danger' }}">
+                {{ t('vote_approved') if vote.approve else t('vote_rejected') }}
+              </span>
+              <span class="badge bg-light text-dark border">{{ diff_label(vote.difficulty_vote.value) }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>{# end collapsible #}
+  </div>
+  {% endfor %}
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 fade-up">
+    <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/questions/{{ question.id }}/edit">
+
+    <div class="mb-3 fade-up fade-up-2">
+      <label class="form-label">{{ t('qf_text_label') }} *</label>
+      <textarea name="text" class="form-control" rows="4" required>{{ question.text }}</textarea>
+    </div>
+
+    <div class="mb-4 fade-up fade-up-2">
+      <label class="form-label">{{ t('qf_model_answer_label') }}</label>
+      <textarea name="model_answer" class="form-control" rows="2"
+                placeholder="{{ t('qf_model_answer_placeholder') }}">{{ question.model_answer or '' }}</textarea>
+    </div>
+
+    <div class="row g-3 mb-4 fade-up fade-up-3">
+
+      <div class="col-md-6">
+        <label class="form-label">{{ t('qf_diff_label') }} *</label>
+        <div class="d-flex flex-column gap-2">
+          {% for diff in difficulties %}
+          {% set bd = bloom_detail(diff.value) %}
+          <div class="bloom-card">
+            <input class="form-check-input visually-hidden" type="radio" name="proposed_difficulty"
+                   id="diff_{{ diff.value }}" value="{{ diff.value }}"
+                   {% if diff == question.proposed_difficulty %}checked{% endif %} required>
+            <label class="d-block" for="diff_{{ diff.value }}" style="cursor:pointer">
+              <div class="bloom-header">
+                <span class="{{ 'diff-b' if diff.value=='B' else ('diff-s' if diff.value=='M' else 'diff-v') }}">
+                  {{ diff_label(diff.value) }}
+                </span>
+                <span class="bloom-title">{{ bd.title }}</span>
+              </div>
+              <div class="bloom-detail-text">{{ bd.detail }}</div>
+              <div class="bloom-verbs"><i class="bi bi-cursor-text me-1"></i>{{ bd.verbs }}</div>
+              <div class="bloom-example"><i class="bi bi-chat-square-quote me-1"></i>{{ bd.example }}</div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">{{ t('qf_type_label') }}</label>
+        <div class="d-flex flex-column gap-2">
+          <div class="qtype-card">
+            <input class="form-check-input visually-hidden" type="radio"
+                   name="question_type" id="qt_none" value=""
+                   {% if not question.question_type %}checked{% endif %}>
+            <label class="d-block" for="qt_none" style="cursor:pointer">
+              <div class="qtype-header">
+                <span class="qtype-name text-muted">{{ t('qf_type_none') }}</span>
+              </div>
+            </label>
+          </div>
+          {% for qt in question_types %}
+          {% set td = type_detail(qt.value) %}
+          <div class="qtype-card">
+            <input class="form-check-input visually-hidden" type="radio"
+                   name="question_type" id="qt_{{ qt.value }}" value="{{ qt.value }}"
+                   {% if question.question_type == qt %}checked{% endif %}>
+            <label class="d-block" for="qt_{{ qt.value }}" style="cursor:pointer">
+              <div class="qtype-header">
+                <span class="qtype-name">{{ type_label(qt.value) }}</span>
+                {% if td.bloom %}
+                <span class="qtype-bloom">{{ td.bloom }}</span>
+                {% endif %}
+              </div>
+              <div class="qtype-detail-text">{{ td.detail }}</div>
+              <div class="qtype-example"><i class="bi bi-chat-square-quote me-1"></i>{{ td.example }}</div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4 fade-up fade-up-3">
+      <label class="form-label">
+        {{ t('qf_ilo_label') }} *
+        <span class="text-muted fw-normal small">{{ t('qf_select_ilo_required') if topic_los else '' }}</span>
+      </label>
+      {% if topic_los %}
+      <div class="lo-radio-list">
+        {% for lo in topic_los %}
+        <div class="lo-radio-card">
+          <input type="radio" class="lo-radio-input" name="learning_outcome_id"
+                 id="lo_{{ lo.id }}" value="{{ lo.id }}"
+                 {% if question.learning_outcome_id == lo.id %}checked{% endif %} required>
+          <label class="lo-radio-label" for="lo_{{ lo.id }}">
+            <span class="lo-radio-num">{{ loop.index }}</span>
+            <span class="lo-radio-text">{{ lo.text }}</span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="alert alert-warning py-2 px-3" style="font-size:.84rem">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ t('qf_no_ilo_warning') }}
+        <a href="/topics/{{ question.topic_id }}" class="alert-link">{{ t('bc_topic') }}</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2 fade-up fade-up-4">
+      <button type="submit" class="btn btn-warning">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>
+        {{ t('btn_submit_edit') }}
+      </button>
+      <a href="/questions/{{ question.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}{{ test.name }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-4 fade-up">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/modules/{{ test.module_id }}">{{ t('bc_module') }} {{ test.module.number }}</a></li>
+    <li class="breadcrumb-item"><a href="/modules/{{ test.module_id }}/tests">{{ t('tests_title') }}</a></li>
+    <li class="breadcrumb-item active">{{ test.name }}</li>
+  </ol>
+</nav>
+
+<div class="page-header fade-up fade-up-1">
+  <div>
+    <h2>{{ test.name }}</h2>
+    <div class="subtitle">
+      {{ test.test_questions | length }} {{ t('test_questions') }} ·
+      {{ test.created_at.strftime("%d.%m.%Y %H:%M") }} ·
+      {{ test.creator.name }}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/tests/{{ test.id }}/export.pdf" class="btn btn-outline-secondary">
+      <i class="bi bi-file-pdf me-1"></i>PDF
+    </a>
+    <a href="/tests/{{ test.id }}/export" class="btn btn-outline-primary">
+      <i class="bi bi-file-word me-1"></i>.docx
+    </a>
+    {% if user.role.value == 'admin' %}
+    <a href="/tests/{{ test.id }}/results" class="btn btn-outline-secondary">
+      <i class="bi bi-bar-chart me-1"></i>
+      {{ t('tr_enter') }}
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Reliability + Pass Rate ────────────────────────────────────── #}
+{% if results_map %}
+<div class="card mb-4 fade-up fade-up-2">
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-4 align-items-start">
+
+      {# KR-20 #}
+      <div style="min-width:180px">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:6px">
+          {{ t('ia_kr20') }}
+        </div>
+        {% if kr20_val is not none %}
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.5rem;font-weight:700;line-height:1">{{ kr20_val }}</span>
+          <span class="badge {{ kr20_css }}">{{ t('ia_kr20_' + kr20_band) }}</span>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-4);margin-top:4px">
+          {{ t('ia_kr20_hint') }}
+        </div>
+        {% else %}
+        <div style="font-size:.82rem;color:var(--text-4)">
+          <i class="bi bi-lock me-1"></i>{{ t('ia_kr20_needs_sd') }}
+          <a href="/tests/{{ test.id }}/results" class="ms-1" style="font-size:.78rem">↗</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Pass threshold + expected pass rate #}
+      <div style="min-width:220px">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-4);margin-bottom:6px">
+          {{ t('ia_pass_threshold') }}
+          <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-4)">
+            — {{ pass_pct }}% <em style="font-size:.65rem">({{ t('ia_pass_threshold_policy') }})</em>
+          </span>
+        </div>
+        {% if exp_pass is not none %}
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.5rem;font-weight:700;line-height:1">{{ exp_pass }}%</span>
+          <span style="font-size:.8rem;color:var(--text-4)">{{ t('ia_expected_pass_rate') }}</span>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-4);margin-top:4px">
+          {{ t('ia_expected_pass_hint') }}
+        </div>
+        {% else %}
+        <div style="font-size:.82rem;color:var(--text-4)">
+          <i class="bi bi-info-circle me-1"></i>{{ t('ia_no_data') }}
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ILO Coverage #}
+{% if lo_coverage %}
+{% set total_los = lo_coverage | sum(attribute='n_total') %}
+{% set covered_los = lo_coverage | sum(attribute='n_covered') %}
+<div class="card mb-4 fade-up fade-up-2">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#lo-coverage-panel">
+    <span>
+      <i class="bi bi-bullseye me-2"></i>{{ t('test_coverage') }}
+    </span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge {{ 'bg-success keep' if covered_los == total_los else ('bg-warning' if covered_los > 0 else 'bg-danger') }}">
+        {{ covered_los }} / {{ total_los }}
+      </span>
+      <i class="bi bi-chevron-down" style="font-size:.75rem;opacity:.5"></i>
+    </div>
+  </div>
+  <div class="collapse" id="lo-coverage-panel">
+    <div class="card-body">
+      {% for entry in lo_coverage %}
+      <div class="lo-coverage-topic">
+        <div class="lo-coverage-topic-name">
+          {{ t('bc_topic') }} {{ entry.topic.number }}. {{ entry.topic.name }}
+          <span class="badge bg-light text-dark border ms-1">{{ entry.n_covered }}/{{ entry.n_total }}</span>
+        </div>
+        {% for item in entry.los %}
+        <div class="lo-coverage-row">
+          <i class="bi bi-{{ 'check-circle-fill' if item.covered else 'circle' }} lo-coverage-icon {{ 'covered' if item.covered else 'uncovered' }}"></i>
+          <span class="lo-coverage-text {{ '' if item.covered else 'uncovered' }}">{{ item.lo.text }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# Siblings in same batch #}
+{% if siblings %}
+<div class="mb-4 fade-up fade-up-2">
+  <span style="font-size:.78rem;color:var(--text-4);margin-right:8px">{{ t('test_variants') }}:</span>
+  {% for s in siblings %}
+  <a href="/tests/{{ s.id }}" class="btn btn-sm btn-outline-secondary me-1">{{ s.variant_label }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Questions sorted by difficulty #}
+{% set all_q = test.test_questions | map(attribute='question') | list %}
+{% set b_qs = all_q | selectattr("final_difficulty.value", "equalto", "B") | list %}
+{% set s_qs = all_q | selectattr("final_difficulty.value", "equalto", "M") | list %}
+{% set v_qs = all_q | selectattr("final_difficulty.value", "equalto", "H") | list %}
+
+{% set q_number = namespace(n=1) %}
+{% set delay = namespace(d=2) %}
+{% for section_key, section_qs, diff_cls in [
+    ("test_b_section", b_qs, "diff-b"),
+    ("test_m_section", s_qs, "diff-s"),
+    ("test_h_section", v_qs, "diff-v")
+] %}
+{% if section_qs %}
+<h5 class="mt-4 mb-2 fade-up fade-up-{{ delay.d }}"
+    style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4)">
+  {{ t(section_key) }}
+</h5>
+{% set delay.d = [delay.d + 1, 5] | min %}
+{% for q in section_qs %}
+<div class="card mb-2 fade-up fade-up-{{ delay.d }}">
+  <div class="card-body py-2 px-3">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+      <div style="flex:1;min-width:0">
+        <span class="fw-semibold text-muted me-1">{{ q_number.n }}.</span>{{ q.text }}
+        {% if q.model_answer %}
+        <div class="mt-1 small text-success">
+          <i class="bi bi-check-circle me-1"></i>{{ q.model_answer }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+        <span class="{{ diff_cls }}">{{ diff_label(q.final_difficulty.value) }}</span>
+        {% if q.id in results_map %}
+        {% set r = results_map[q.id] %}
+        {% set pct = (r.correct_count / r.total_students * 100) | round(0) | int if r.total_students else 0 %}
+        <span class="badge {{ 'bg-success keep' if pct >= pass_pct else ('bg-warning' if pct >= pass_pct - 25 else 'bg-danger') }}"
+              title="p={{ pct }}%  n={{ r.total_students }}">
+          p={{ pct }}% <span style="opacity:.7;font-weight:400">n={{ r.total_students }}</span>
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% set q_number.n = q_number.n + 1 %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+{% endblock %}

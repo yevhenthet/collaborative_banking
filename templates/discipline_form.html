@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ t('btn_new_discipline') }}{% endblock %}
+{% block content %}
+<div style="max-width:560px">
+
+  <nav aria-label="breadcrumb" class="mb-4 fade-up">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/bank">{{ t('bc_faculties') }}</a></li>
+      <li class="breadcrumb-item"><a href="/faculties/{{ faculty.id }}">{{ faculty.name }}</a></li>
+      {% if editing %}
+      <li class="breadcrumb-item"><a href="/disciplines/{{ discipline.id }}">{{ discipline.name }}</a></li>
+      <li class="breadcrumb-item active">{{ t('btn_save') }}</li>
+      {% else %}
+      <li class="breadcrumb-item active">{{ t('btn_new_discipline') }}</li>
+      {% endif %}
+    </ol>
+  </nav>
+
+  <div class="page-header fade-up fade-up-1">
+    <h2>{{ t('btn_save') if editing else t('btn_new_discipline') }}</h2>
+  </div>
+
+  <div class="card fade-up fade-up-2">
+    <div class="card-body">
+      <form method="post" action="{{ '/disciplines/' ~ discipline.id ~ '/edit' if editing else '/faculties/' ~ faculty.id ~ '/disciplines' }}">
+        <div class="mb-3">
+          <label class="form-label">{{ t('form_name') }} *</label>
+          <input type="text" name="name" class="form-control" required autofocus
+                 value="{{ discipline.name if editing else '' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">{{ t('form_code') }}</label>
+          <input type="text" name="code" class="form-control" placeholder="OK12"
+                 value="{{ discipline.code if editing and discipline.code else '' }}">
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">{{ t('btn_save') if editing else t('btn_new_discipline') }}</button>
+          <a href="{{ '/disciplines/' ~ discipline.id if editing else '/faculties/' ~ faculty.id }}" class="btn btn-outline-secondary">{{ t('btn_cancel') }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

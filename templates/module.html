@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ t('bc_module') }} {{ module.number }} — {{ module.name }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-4 fade-up">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/bank">{{ t('bc_faculties') }}</a></li>
+    <li class="breadcrumb-item"><a href="/faculties/{{ module.discipline.faculty_id }}">{{ module.discipline.faculty.name }}</a></li>
+    <li class="breadcrumb-item"><a href="/disciplines/{{ module.discipline_id }}">{{ module.discipline.name }}</a></li>
+    <li class="breadcrumb-item active">{{ t('bc_module') }} {{ module.number }}</li>
+  </ol>
+</nav>
+
+<div class="page-header fade-up fade-up-1">
+  <div>
+    <h2>{{ t('bc_module') }} {{ module.number }}. {{ module.name }}</h2>
+    <div class="subtitle">{{ module.topics | length }} {{ t('mod_topics_count') }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap justify-content-end">
+    <a href="/modules/{{ module.id }}/tests" class="btn btn-outline-secondary">
+      <i class="bi bi-file-text"></i> {{ t('mod_tests') }}
+    </a>
+    <a href="/modules/{{ module.id }}/tests/new" class="btn btn-success">
+      <i class="bi bi-lightning"></i> {{ t('mod_generate_test') }}
+    </a>
+    {% if user.role.value == 'admin' %}
+    <a href="/modules/{{ module.id }}/edit" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil"></i>
+    </a>
+    <a href="/modules/{{ module.id }}/topics/new" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> {{ t('mod_new_topic') }}
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if module.topics %}
+
+{# ── Topic cards ──────────────────────────────────────────── #}
+{% for topic in module.topics %}
+<div class="card mb-2 fade-up" style="animation-delay: {{ loop.index * 0.04 }}s">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <a href="/topics/{{ topic.id }}" class="text-decoration-none fw-semibold" style="color:var(--text)">
+        {{ t('bc_topic') }} {{ topic.number }}. {{ topic.name }}
+      </a>
+      {% if topic.is_high_stakes %}
+      <span class="badge bg-danger"><i class="bi bi-star-fill"></i> {{ t('mod_key_topic') }}</span>
+      {% endif %}
+      {% if topic.hours_weight != 1 %}
+      <span class="badge bg-light text-dark border" title="{{ t('topic_weight') }}">×{{ topic.hours_weight }}</span>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2 align-items-center flex-shrink-0">
+      {% set active  = topic.questions | selectattr("status.value", "equalto", "active")  | list | length %}
+      {% set pending = topic.questions | selectattr("status.value", "equalto", "pending") | list | length %}
+      <span class="badge bg-success keep">{{ active }} {{ t('mod_active_badge') }}</span>
+      {% if pending > 0 %}
+      <span class="badge bg-warning">{{ pending }} {{ t('mod_pending_badge') }}</span>
+      {% endif %}
+      <a href="/topics/{{ topic.id }}/questions/new" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-plus"></i> {{ t('mod_add_question') }}
+      </a>
+      {% if user.role.value == 'admin' %}
+      <form method="post" action="/topics/{{ topic.id }}/toggle-high-stakes" class="m-0">
+        <button type="submit"
+                class="btn btn-sm {{ 'btn-danger' if topic.is_high_stakes else 'btn-outline-secondary' }}"
+                title="{{ t('mod_unmark_key') if topic.is_high_stakes else t('mod_mark_key') }}">
+          <i class="bi bi-star{{ '-fill' if topic.is_high_stakes else '' }}"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{# ── Pool health ──────────────────────────────────────────── #}
+<div class="card mt-5 fade-up">
+  <div class="card-header">
+    <i class="bi bi-bar-chart-line me-2"></i>{{ t('mod_pool_health') }}
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th style="padding-left:18px">{{ t('mod_col_topic') }}</th>
+          <th class="text-center" style="width:70px"><span class="diff-b" style="font-size:.68rem">{{ diff_label('B') }}</span></th>
+          <th class="text-center" style="width:70px"><span class="diff-s" style="font-size:.68rem">{{ diff_label('M') }}</span></th>
+          <th class="text-center" style="width:70px"><span class="diff-v" style="font-size:.68rem">{{ diff_label('H') }}</span></th>
+          <th class="text-center" style="width:70px;color:var(--text-4);font-size:.72rem;">{{ t('mod_col_total') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic in module.topics %}
+        {% set qs = topic.questions | selectattr("status.value", "equalto", "active") | list %}
+        {% set b_count = qs | selectattr("final_difficulty.value", "equalto", "B") | list | length %}
+        {% set s_count = qs | selectattr("final_difficulty.value", "equalto", "M") | list | length %}
+        {% set v_count = qs | selectattr("final_difficulty.value", "equalto", "H") | list | length %}
+        <tr>
+          <td class="small" style="padding-left:18px;max-width:0">
+            <span class="d-flex align-items-center gap-1">
+              <span class="text-muted">{{ topic.number }}.</span>
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ topic.name }}</span>
+              {% if topic.is_high_stakes %}<i class="bi bi-star-fill text-danger flex-shrink-0"></i>{% endif %}
+            </span>
+          </td>
+          {% for count in [b_count, s_count, v_count] %}
+          <td class="text-center">
+            <span class="pool-count {{ 'good' if count >= 5 else ('warn' if count >= 3 else 'crit') }}">
+              {{ count }}{% if count < 3 %} <i class="bi bi-exclamation-triangle-fill"></i>{% endif %}
+            </span>
+          </td>
+          {% endfor %}
+          <td class="text-center" style="color:var(--text-4);font-size:.82rem;font-weight:600">
+            {{ b_count + s_count + v_count }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body pt-2 pb-3" style="border-top:1px solid var(--border)">
+    <span class="pool-count good me-1">≥5</span><span class="text-muted small me-3">{{ t('mod_pool_good') }}</span>
+    <span class="pool-count warn me-1">3–4</span><span class="text-muted small me-3">{{ t('mod_pool_warn') }}</span>
+    <span class="pool-count crit me-1">≤2</span><span class="text-muted small">{{ t('mod_pool_crit') }}</span>
+  </div>
+</div>
+
+{% else %}
+<p class="text-muted">{{ t('mod_empty') }}</p>
+{% endif %}
+
+{% endblock %}
