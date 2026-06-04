@@ -396,6 +396,7 @@ TRANSLATIONS = {
         "export_rv_col_created": "Дата та час голосу",
         # Forms
         "form_name": "Назва",
+        "form_person_name": "Ім'я",
         "form_code": "Код",
         "form_number": "Номер",
         "form_hours": "Годин (вага теми)",
@@ -901,6 +902,7 @@ TRANSLATIONS = {
         "export_rv_col_created": "Vote date and time",
         # Forms
         "form_name": "Name",
+        "form_person_name": "Name",
         "form_code": "Code",
         "form_number": "Number",
         "form_hours": "Hours (topic weight)",
